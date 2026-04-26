@@ -598,12 +598,11 @@ a:focus-visible {
 /* ---------- Responsive ---------- */
 @media (max-width: 1024px) {
   .hero {
-    grid-template-columns: 1fr;
-    gap: clamp(24px, 4vw, 48px);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.6fr);
+    gap: clamp(20px, 3vw, 40px);
     padding-top: clamp(110px, 16vh, 160px);
   }
-  .hero-visual { max-width: 480px; order: 2; }
-  .hero-copy { order: 1; }
+  .hero-visual { max-width: 320px; }
   .section-head {
     grid-template-columns: 1fr;
     gap: 12px;
@@ -613,6 +612,13 @@ a:focus-visible {
 }
 
 @media (max-width: 720px) {
+  .hero {
+    grid-template-columns: 1fr;
+    gap: clamp(24px, 4vw, 48px);
+  }
+  .hero-visual { max-width: 380px; order: 2; }
+  .hero-copy { order: 1; }
+
   body { font-size: 17px; }
   .nav { gap: 16px; font-size: 13px; }
   .brand { font-size: 17px; }
