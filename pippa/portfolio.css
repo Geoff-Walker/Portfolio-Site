@@ -112,6 +112,14 @@
   margin-bottom: calc((780 * (1 - var(--_phone-scale))) * -1px);
 }
 
+@media (max-width: 600px) {
+  .pp-hero__chat { overflow: hidden; }
+  .pp-hero__phone {
+    --_phone-scale: calc(220 / 360);
+    margin-bottom: calc((780 * (1 - (220 / 360))) * -1px);
+  }
+}
+
 @media (min-width: 768px) {
   .pp-hero { padding: calc(64px * var(--pp-space-scale)) 32px calc(32px * var(--pp-space-scale)); }
   .pp-hero__grid { grid-template-columns: 1.05fr 0.95fr; gap: 48px; align-items: center; }

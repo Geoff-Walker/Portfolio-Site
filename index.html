@@ -62,6 +62,7 @@
   filter: drop-shadow(0 0 80px color-mix(in oklab, var(--accent) 18%, transparent));
 }
 @media (max-width: 860px) { .hero-portrait { justify-self: start; width: clamp(180px, 50vw, 260px); } }
+@media (max-width: 480px) { .hero-portrait { width: clamp(120px, 32vw, 160px); } }
 
 .hero-meta {
   position: absolute; bottom: 24px; left: var(--pad); right: var(--pad); z-index: 2;
@@ -147,6 +148,7 @@
 .about-grid { display: grid; grid-template-columns: 280px 1fr; gap: clamp(40px, 6vw, 80px); align-items: start; }
 @media (max-width: 860px) { .about-grid { grid-template-columns: 1fr; } }
 .about-aside { position: sticky; top: 120px; font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 12px; color: var(--fg-dimmer); letter-spacing: 0.04em; line-height: 1.8; }
+@media (max-width: 860px) { .about-aside { position: static; } }
 .about-aside dt { color: var(--fg-dim); }
 .about-aside dd { color: var(--fg); margin-bottom: 14px; }
 .about-body { font-size: 16px; line-height: 1.7; color: var(--fg-dim); max-width: 65ch; }

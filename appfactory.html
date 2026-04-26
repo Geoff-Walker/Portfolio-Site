@@ -72,6 +72,10 @@
   font-size: 12px; color: var(--fg-dim); letter-spacing: 0.04em;
 }
 .af-hero-back:hover { color: var(--accent); }
+@media (max-width: 720px) { .af-hero-back { display: none; } }
+@media (max-width: 720px) {
+  .af-hero h1 { font-size: clamp(44px, 12vw, 52px); }
+}
 
 /* hero anim is responsive SVG — no separate mobile fallback needed */
 
