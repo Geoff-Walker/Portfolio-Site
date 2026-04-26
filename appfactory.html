@@ -1,0 +1,743 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AppFactory — Geoff Walker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/shared.css">
+<link rel="stylesheet" href="assets/portfolio-nav.css">
+<style>
+  /* AppFactory dropdown + tray — uses shared.css vars */
+  .pf-projects-btn { color: var(--fg-dim); font-family: "JetBrains Mono", monospace; font-size: 12px; letter-spacing: 0.04em; }
+  .pf-projects-btn:hover,
+  .pf-projects-btn[aria-expanded="true"] { color: var(--fg); }
+  .pf-projects-drop { background: var(--bg-2); border-color: var(--rule); }
+  .pf-projects-drop a { color: var(--fg-dim); font-size: 12px; letter-spacing: 0.03em; }
+  .pf-projects-drop a:hover { background: var(--rule); color: var(--fg); }
+  .pf-burger span { background: var(--fg-dim); }
+  .pf-tray { background: rgba(9,9,11,0.97); border-top-color: var(--rule); }
+  .pf-tray-label { color: var(--fg-dimmer); }
+  .pf-tray a { color: var(--fg-dim); border-bottom-color: var(--rule); font-size: 13px; letter-spacing: 0.02em; }
+  .pf-tray a:hover { color: var(--fg); }
+</style>
+<style>
+/* AppFactory-specific styles */
+
+/* Hero */
+.af-hero {
+  position: relative;
+  height: 100vh; height: 100svh;
+  min-height: 600px;
+  overflow: hidden;
+  background: var(--bg);
+}
+#hero-anim { position: absolute; inset: 0; }
+#hero-anim svg { width: 100%; height: 100%; }
+.af-hero-overlay {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  padding: 0 var(--pad) clamp(48px, 8vh, 96px);
+  z-index: 2;
+}
+.af-hero-overlay .label {
+  display: inline-block; margin-bottom: 18px; color: var(--fg-dimmer);
+}
+.af-hero h1 {
+  font-size: clamp(56px, 9vw, 128px);
+  font-weight: 500;
+  letter-spacing: -0.04em;
+  line-height: 0.92;
+  margin-bottom: 16px;
+  color: var(--fg);
+}
+.af-hero .sub {
+  font-size: clamp(16px, 1.6vw, 22px);
+  color: var(--fg-dim);
+  letter-spacing: -0.01em;
+  max-width: 60ch;
+}
+.af-hero-meta {
+  position: absolute; top: 80px; right: var(--pad); z-index: 3;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px; color: var(--fg-dimmer); letter-spacing: 0.06em;
+  text-align: right; line-height: 1.8;
+}
+.af-hero-meta .ok { color: var(--green); }
+
+.af-hero-back {
+  position: absolute; top: 18px; left: var(--pad); z-index: 51;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px; color: var(--fg-dim); letter-spacing: 0.04em;
+}
+.af-hero-back:hover { color: var(--accent); }
+
+/* hero anim is responsive SVG — no separate mobile fallback needed */
+
+/* Body sections */
+.af-section {
+  padding: clamp(80px, 12vh, 140px) 0;
+  border-top: 1px solid var(--rule);
+  position: relative;
+}
+.af-section h2 {
+  font-size: clamp(32px, 4vw, 56px);
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  margin: 16px 0 32px;
+  text-wrap: balance;
+}
+.af-section .body p {
+  color: var(--fg-dim);
+  font-size: clamp(15px, 1.3vw, 17px);
+  line-height: 1.65;
+  max-width: 65ch;
+  margin-bottom: 18px;
+  text-wrap: pretty;
+}
+.af-section .body p strong { color: var(--fg); font-weight: 500; }
+
+.af-section .lead {
+  font-size: clamp(18px, 1.8vw, 24px);
+  line-height: 1.4;
+  color: var(--fg);
+  letter-spacing: -0.02em;
+  max-width: 50ch;
+  margin-bottom: 32px;
+  text-wrap: balance;
+}
+
+/* Archie section — visual weight */
+.archie {
+  background: var(--bg-2);
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  padding: clamp(100px, 16vh, 180px) 0;
+  position: relative;
+}
+.archie::before {
+  content: ""; position: absolute; top: 0; bottom: 0; left: 0;
+  width: 2px; background: var(--gold);
+  opacity: 0.6;
+}
+.archie .label { color: var(--gold); }
+.archie h2 {
+  font-size: clamp(40px, 6vw, 72px);
+  font-weight: 500;
+  letter-spacing: -0.04em;
+  line-height: 0.96;
+  margin: 16px 0 32px;
+}
+.archie .lead { color: var(--fg); }
+.archie-grid { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(40px, 6vw, 80px); align-items: start; }
+@media (max-width: 960px) { .archie-grid { grid-template-columns: 1fr; } }
+.archie-card {
+  border: 1px solid var(--rule);
+  background: color-mix(in oklab, var(--bg) 70%, transparent);
+  padding: clamp(28px, 3vw, 40px);
+  display: grid; gap: 22px;
+}
+.archie-card .field {
+  display: grid; grid-template-columns: 110px 1fr; gap: 16px;
+  align-items: baseline; padding-bottom: 16px;
+  border-bottom: 1px solid var(--rule);
+}
+.archie-card .field:last-child { border-bottom: none; padding-bottom: 0; }
+.archie-card .field .k {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--fg-dimmer);
+}
+.archie-card .field .v {
+  color: var(--fg);
+  font-size: 15px;
+  line-height: 1.5;
+}
+.archie-card .field .v.dim { color: var(--fg-dim); }
+
+/* Pipeline columns */
+.pipeline-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 1px; background: var(--rule);
+  border: 1px solid var(--rule);
+}
+@media (max-width: 1100px) { .pipeline-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 720px)  { .pipeline-grid { grid-template-columns: 1fr; } }
+.pipe-col {
+  background: var(--bg);
+  padding: clamp(28px, 3vw, 40px);
+  display: flex; flex-direction: column; gap: 16px;
+  min-height: 320px;
+}
+.pipe-col .label { color: var(--accent); }
+.pipe-col h3 {
+  font-size: 26px; font-weight: 500; letter-spacing: -0.025em;
+  line-height: 1.15;
+}
+.pipe-col .sub {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px; color: var(--fg-dim);
+  letter-spacing: 0.04em;
+}
+.pipe-col p {
+  color: var(--fg-dim); font-size: 14px; line-height: 1.6;
+}
+.pipe-col .layer-num {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px; color: var(--fg-dimmer); letter-spacing: 0.1em;
+  margin-top: auto; padding-top: 16px;
+  border-top: 1px solid var(--rule);
+}
+
+/* Gate / human in the loop */
+.gate {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: clamp(40px, 6vw, 80px);
+  align-items: center;
+}
+@media (max-width: 960px) { .gate { grid-template-columns: 1fr; } }
+.gate-diagram {
+  border: 1px solid var(--rule);
+  background: var(--bg);
+  aspect-ratio: 5/4;
+  position: relative; overflow: hidden;
+}
+#gate-canvas { width: 100%; height: 100%; display: block; }
+
+/* Stack tags */
+.stack-list {
+  display: flex; flex-wrap: wrap;
+  gap: 10px 24px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 14px;
+  color: var(--fg-dim);
+  letter-spacing: 0.02em;
+  max-width: 80ch;
+}
+.stack-list span { white-space: nowrap; }
+.stack-list span.hi { color: var(--accent); }
+
+/* Ask Archie chat */
+.ask {
+  background: var(--bg-2);
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  padding: clamp(80px, 12vh, 140px) 0;
+}
+.chat {
+  max-width: 720px; margin: 32px auto 0;
+  border: 1px solid var(--rule);
+  background: var(--bg);
+  display: flex; flex-direction: column;
+  min-height: 460px;
+  border-radius: 2px;
+  overflow: hidden;
+}
+.chat-head {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--rule);
+  display: flex; align-items: center; gap: 12px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px; letter-spacing: 0.1em;
+  color: var(--fg-dim); text-transform: uppercase;
+}
+.chat-head .a-mark {
+  width: 22px; height: 22px;
+  display: grid; place-items: center;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-family: "Geist", sans-serif;
+  font-weight: 500; font-size: 12px;
+  letter-spacing: 0;
+}
+.chat-head .status { margin-left: auto; color: var(--green); display: flex; align-items: center; gap: 6px; }
+.chat-head .status::before {
+  content: ""; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--green); box-shadow: 0 0 8px var(--green);
+}
+.chat-body {
+  flex: 1; overflow-y: auto;
+  padding: 24px 20px;
+  display: flex; flex-direction: column; gap: 18px;
+  scroll-behavior: smooth;
+}
+.chat-msg {
+  max-width: 80%;
+  padding: 12px 16px;
+  font-size: 14px; line-height: 1.55;
+  border-radius: 2px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+.chat-msg.user {
+  align-self: flex-end;
+  background: var(--rule);
+  color: var(--fg);
+}
+.chat-msg.archie {
+  align-self: flex-start;
+  background: color-mix(in oklab, var(--bg-2) 70%, var(--bg));
+  border-left: 2px solid var(--accent);
+  color: var(--fg);
+}
+.chat-msg.archie .name {
+  display: block;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px; letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+.chat-msg.thinking { color: var(--fg-dim); font-style: italic; }
+.chat-msg.thinking::after {
+  content: ""; display: inline-block; width: 6px; height: 6px;
+  background: var(--accent); border-radius: 50%; margin-left: 6px;
+  animation: think 1.2s ease-in-out infinite;
+}
+@keyframes think { 0%,100%{opacity:0.3;} 50%{opacity:1;} }
+.chat-input {
+  display: flex; gap: 8px; padding: 12px;
+  border-top: 1px solid var(--rule);
+  background: var(--bg);
+}
+.chat-input input {
+  flex: 1; background: transparent; border: 1px solid var(--rule);
+  padding: 12px 14px;
+  color: var(--fg);
+  font-family: "Geist", sans-serif; font-size: 14px;
+  border-radius: 2px;
+  transition: border-color 200ms;
+}
+.chat-input input:focus { outline: none; border-color: var(--accent); }
+.chat-input input::placeholder { color: var(--fg-dimmer); }
+.chat-input button {
+  background: var(--accent); color: var(--bg);
+  border: none; padding: 0 18px;
+  font-family: "JetBrains Mono", monospace; font-size: 12px;
+  letter-spacing: 0.1em; text-transform: uppercase; font-weight: 500;
+  cursor: pointer; border-radius: 2px;
+  transition: opacity 200ms;
+}
+.chat-input button:hover { opacity: 0.85; }
+.chat-input button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* GitHub footer */
+.gh {
+  padding: clamp(60px, 8vh, 100px) 0;
+  border-top: 1px solid var(--rule);
+}
+.gh-row {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 24px; flex-wrap: wrap;
+}
+.gh-row p { color: var(--fg-dim); font-size: 15px; max-width: 50ch; }
+.gh-link {
+  display: inline-flex; align-items: center; gap: 12px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 13px; letter-spacing: 0.04em;
+  color: var(--accent);
+  border: 1px solid var(--rule);
+  padding: 14px 20px;
+  border-radius: 2px;
+  transition: border-color 200ms;
+}
+.gh-link:hover { border-color: var(--accent); }
+.gh-link svg { width: 16px; height: 16px; fill: currentColor; }
+</style>
+</head>
+<body>
+
+<nav class="nav" id="nav">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-mark">geoff walker<span> // ai systems</span></a>
+    <div class="nav-links">
+      <a href="#what">What it is</a>
+      <a href="#archie">Archie</a>
+      <a href="#pipeline">Pipeline</a>
+      <a href="#hil">Human-in-loop</a>
+      <a href="#stack">Stack</a>
+      <a href="#ask">Ask Archie</a>
+      <div class="pf-projects-wrap">
+        <button class="pf-projects-btn" aria-haspopup="true" aria-expanded="false">Projects <span class="pf-chevron" aria-hidden="true">▾</span></button>
+        <div class="pf-projects-drop">
+          <a href="/appfactory.html">AppFactory</a>
+          <a href="/familycookbook/">FamilyCookbook</a>
+          <a href="/pippa/">Pippa</a>
+          <a href="/tom/">Tom</a>
+        </div>
+      </div>
+    </div>
+    <button class="pf-burger" aria-label="Open menu" aria-expanded="false" aria-controls="pf-tray">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+  <div class="pf-tray" id="pf-tray">
+    <p class="pf-tray-label">On this page</p>
+    <a href="#what">What it is</a>
+    <a href="#archie">Archie</a>
+    <a href="#pipeline">Pipeline</a>
+    <a href="#hil">Human-in-loop</a>
+    <a href="#stack">Stack</a>
+    <a href="#ask">Ask Archie</a>
+    <p class="pf-tray-label">Projects</p>
+    <a href="/appfactory.html">AppFactory</a>
+    <a href="/familycookbook/">FamilyCookbook</a>
+    <a href="/pippa/">Pippa</a>
+    <a href="/tom/">Tom</a>
+  </div>
+</nav>
+
+<header class="af-hero" id="top">
+  <div id="hero-anim" aria-hidden="true" style="position:absolute;inset:0;overflow:hidden;"></div>
+  <div class="af-hero-meta">
+    <div>SYSTEM // ONLINE</div>
+    <div class="ok">● 7 AGENTS · 2 GATES</div>
+    <div>v.2026.04</div>
+  </div>
+  <div class="af-hero-overlay">
+    <span class="label">// case study</span>
+    <h1>AppFactory</h1>
+    <p class="sub">An autonomous multi-agent build pipeline.</p>
+  </div>
+</header>
+
+<section class="af-section" id="what">
+  <div class="container">
+    <span class="label reveal">// what it is</span>
+    <h2 class="reveal">A specification goes in. Working software comes out.</h2>
+    <div class="body reveal">
+      <p>AppFactory is the system I built to turn a project specification into working software <strong>without constant supervision</strong>. It orchestrates specialised AI agents through a stateful pipeline graph, with human approval gates at every decision point that matters.</p>
+      <p><strong>Three layers.</strong> n8n handles scheduling, infrastructure checks, and notifications. LangGraph manages the stateful pipeline graph — which agents run, in what order, and what happens at each gate. Claude Code agents — Design, QA, Development, Infrastructure, Research — run headless on a Linux VM with direct access to the codebase and infrastructure.</p>
+    </div>
+  </div>
+</section>
+
+<section class="archie" id="archie">
+  <div class="container">
+    <span class="label reveal">// the orchestrator</span>
+    <h2 class="reveal">Archie — the Architect</h2>
+    <div class="archie-grid">
+      <div class="reveal">
+        <p class="lead">At the centre of AppFactory is an orchestrator with genuine judgment, not just routing logic.</p>
+        <div class="body">
+          <p>Archie holds the full context of every project — across sessions, across agents, across months of development. Archie writes the design brief, decides which agents to spawn, surfaces risks before they become problems, and pushes back when a direction is wrong. <strong>Not diplomatically wrong. Directly wrong.</strong></p>
+          <p>The distinction from a generic AI assistant matters. Most AI tooling says yes, delivers what you asked for, and if the ask was flawed the output is flawed. Archie's value is in <strong>what it flags, what it refuses, and when it stops.</strong></p>
+          <p>Building an autonomous pipeline means trusting the system to catch its own errors. That requires a collaborator, not a worker.</p>
+        </div>
+      </div>
+      <div class="archie-card reveal">
+        <div class="field"><div class="k">// role</div><div class="v">Orchestrator. Holds context. Writes briefs. Decides what runs.</div></div>
+        <div class="field"><div class="k">// memory</div><div class="v">Persistent across sessions, agents, months of project history.</div></div>
+        <div class="field"><div class="k">// authority</div><div class="v">Spawn agents. Surface risks. Push back. Stop a run.</div></div>
+        <div class="field"><div class="k">// failure mode</div><div class="v dim">Flags an ask that's wrong. Refuses to proceed without clarification. The point is what it doesn't do.</div></div>
+        <div class="field"><div class="k">// not</div><div class="v dim">A worker agent. A yes-machine. A wrapper around a model.</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="af-section" id="pipeline">
+  <div class="container">
+    <span class="label reveal">// the pipeline</span>
+    <h2 class="reveal">Three layers, plus the bridge.</h2>
+    <p class="lead reveal">Each layer has one job. The bridge is what makes the orchestrator and the execution engine a single working unit.</p>
+    <div class="pipeline-grid reveal">
+      <div class="pipe-col">
+        <span class="label">Layer one</span>
+        <h3>n8n</h3>
+        <span class="sub">Pre & Post Processing</span>
+        <p>Infrastructure checks before a pipeline run starts. Scheduling — run overnight or on demand. Post-pipeline notifications. The connective tissue between the pipeline and the outside world.</p>
+        <span class="layer-num">// 01</span>
+      </div>
+      <div class="pipe-col">
+        <span class="label">The bridge</span>
+        <h3>LangGraph MCP Server</h3>
+        <span class="sub">Custom TypeScript</span>
+        <p>A custom TypeScript MCP server connects Archie directly to the LangGraph pipeline. Through it, Archie can dispatch runs, inspect live state, surface gate context into the working session, resume interrupted runs, inject content mid-run, and monitor token spend — without leaving Claude Code.</p>
+        <span class="layer-num">// bridge</span>
+      </div>
+      <div class="pipe-col">
+        <span class="label">Layer two</span>
+        <h3>LangGraph</h3>
+        <span class="sub">The Pipeline Graph</span>
+        <p>The business logic layer. LangGraph manages which agents run, in what order, and what happens when a gate fires. Pipeline state flows through the graph — every agent reads from it, every agent writes to it. The graph does not advance until a gate is cleared.</p>
+        <span class="layer-num">// 02</span>
+      </div>
+      <div class="pipe-col">
+        <span class="label">Layer three</span>
+        <h3>Claude Code Agents</h3>
+        <span class="sub">The Work Layer</span>
+        <p>Five specialised agents, each running Claude Code in headless mode on a Linux VM. Design produces the visual system and HTML prototype. QA writes Jira tickets with acceptance criteria. Development implements from the tickets. Infrastructure manages the server. Research backs every decision with current information.</p>
+        <span class="layer-num">// 03</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="af-section" id="hil">
+  <div class="container">
+    <div class="gate">
+      <div class="reveal">
+        <span class="label">// human in the loop</span>
+        <h2>Human in the loop — by design.</h2>
+        <p class="lead">Every approval gate is a deliberate pause.</p>
+        <div class="body">
+          <p>When the pipeline reaches a gate — after Design produces its output, after Development completes a feature — <strong>the pipeline stops</strong>. LangGraph fires an interrupt. The gate surfaces through the MCP server: Archie presents the gate context directly in the working session, and the pipeline resumes only when a decision is recorded in state.</p>
+          <p>This is not a safety net bolted on afterwards. <strong>It is the architecture.</strong> Autonomous execution is only safe when the system knows what it does not know — and stops to ask.</p>
+        </div>
+      </div>
+      <div class="gate-diagram reveal">
+        <canvas id="gate-canvas" aria-hidden="true"></canvas>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+(function () {
+  const canvas = document.getElementById('gate-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const BG = '#09090b', RULE = '#1e293b', FG = '#f8fafc';
+  const DIM = '#64748b', AMBER = '#f59e0b', GREEN = '#22c55e', ACC = '#60a5fa';
+
+  function resize() {
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width  = Math.round(canvas.clientWidth  * dpr);
+    canvas.height = Math.round(canvas.clientHeight * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  resize();
+  new ResizeObserver(resize).observe(canvas);
+
+  const CYCLE = 5.2;
+  let elapsed = 0, lastT = null;
+
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  function ss(t) { return t < 0 ? 0 : t > 1 ? 1 : t * t * (3 - 2 * t); }
+
+  function mono(size, bold) {
+    return `${bold ? 500 : 400} ${size}px "JetBrains Mono", ui-monospace, monospace`;
+  }
+
+  function draw(now) {
+    if (!lastT) lastT = now;
+    const dt = (now - lastT) * 0.001;
+    lastT = now;
+    elapsed += dt;
+    if (elapsed >= CYCLE) elapsed = 0;
+    const t = elapsed;
+
+    const W = canvas.clientWidth, H = canvas.clientHeight;
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = BG;
+    ctx.fillRect(0, 0, W, H);
+
+    // Layout
+    const cx = W * 0.5, cy = H * 0.52;
+    const nW = W * 0.20, nH = H * 0.16, r = 4;
+    const leftX  = W * 0.18, rightX = W * 0.82;
+    const gR     = nH * 0.62;   // diamond half-size
+
+    // Phases:
+    // 0..1.1  : packet traveling left→gate
+    // 1.1..2.1: gate amber (interrupt)
+    // 2.1..2.8: gate green (approved), packet resumes
+    // 2.8..3.9: packet gate→right, right node lights
+    // 3.9..5.2: hold, fade ready for reset
+
+    // Gate color + pulse
+    let gateCol = RULE, gateAlpha = 0.3;
+    if (t >= 1.1 && t < 2.1) {
+      const pulse = 0.7 + 0.3 * Math.sin(t * 9);
+      gateCol = AMBER; gateAlpha = pulse;
+    } else if (t >= 2.1 && t < 2.8) {
+      gateCol = GREEN; gateAlpha = 1;
+    } else if (t >= 2.8) {
+      gateCol = GREEN; gateAlpha = 0.6 + 0.1 * Math.sin(t * 2);
+    }
+
+    // Right node lit once packet arrives
+    const rightLit = t >= 3.5;
+
+    // Base connecting line
+    ctx.beginPath();
+    ctx.moveTo(leftX + nW / 2, cy);
+    ctx.lineTo(rightX - nW / 2, cy);
+    ctx.strokeStyle = RULE; ctx.lineWidth = 1.5; ctx.stroke();
+
+    // Glow line — progress up to packet
+    let glowEnd = leftX + nW / 2;
+    if (t < 1.1)       glowEnd = lerp(leftX + nW/2, cx - gR, ss(t / 1.1));
+    else if (t < 2.8)  glowEnd = cx - gR;
+    else if (t < 3.9)  glowEnd = lerp(cx + gR, rightX - nW/2, ss((t - 2.8) / 1.1));
+    else               glowEnd = rightX - nW / 2;
+    if (glowEnd > leftX + nW / 2) {
+      ctx.beginPath();
+      ctx.moveTo(leftX + nW / 2, cy);
+      ctx.lineTo(glowEnd, cy);
+      ctx.strokeStyle = ACC; ctx.globalAlpha = 0.35; ctx.lineWidth = 2; ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+
+    // Left node — [PIPELINE]
+    ctx.beginPath();
+    ctx.roundRect(leftX - nW/2, cy - nH/2, nW, nH, r);
+    ctx.fillStyle = BG; ctx.fill();
+    ctx.strokeStyle = t >= 0.05 ? ACC : RULE; ctx.lineWidth = 1.5;
+    ctx.globalAlpha = t < 1.1 ? 0.5 + 0.5 * ss(t / 0.4) : 0.4;
+    ctx.stroke(); ctx.globalAlpha = 1;
+    ctx.fillStyle = DIM; ctx.font = mono(10); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('PIPELINE', leftX, cy);
+
+    // Diamond gate
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.beginPath();
+    ctx.moveTo(0, -gR); ctx.lineTo(gR, 0); ctx.lineTo(0, gR); ctx.lineTo(-gR, 0);
+    ctx.closePath();
+    ctx.fillStyle = BG; ctx.fill();
+    ctx.strokeStyle = gateCol; ctx.lineWidth = 2; ctx.globalAlpha = gateAlpha;
+    ctx.stroke(); ctx.globalAlpha = 1;
+    ctx.restore();
+
+    // Gate label
+    ctx.fillStyle = gateCol; ctx.globalAlpha = gateAlpha;
+    ctx.font = mono(9); ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText('APPROVAL GATE', cx, cy + gR + 10);
+    ctx.globalAlpha = 1;
+
+    // Right node — [RESUME]
+    ctx.beginPath();
+    ctx.roundRect(rightX - nW/2, cy - nH/2, nW, nH, r);
+    ctx.fillStyle = BG; ctx.fill();
+    ctx.strokeStyle = rightLit ? ACC : RULE; ctx.lineWidth = 1.5;
+    ctx.globalAlpha = rightLit ? 1 : 0.3; ctx.stroke(); ctx.globalAlpha = 1;
+    ctx.fillStyle = rightLit ? FG : DIM;
+    ctx.font = mono(10); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('RESUME', rightX, cy);
+
+    // Packet
+    if (t < 1.1) {
+      const px = lerp(leftX + nW/2 + 8, cx - gR - 8, ss(t / 1.1));
+      ctx.beginPath(); ctx.arc(px, cy, 4, 0, Math.PI * 2);
+      ctx.fillStyle = ACC; ctx.fill();
+    } else if (t >= 2.8 && t < 3.9) {
+      const px = lerp(cx + gR + 8, rightX - nW/2 - 8, ss((t - 2.8) / 1.1));
+      ctx.beginPath(); ctx.arc(px, cy, 4, 0, Math.PI * 2);
+      ctx.fillStyle = ACC; ctx.fill();
+    }
+
+    // Floating labels above gate
+    const labelY = cy - gR - 14;
+    if (t >= 1.1 && t < 2.8) {
+      const fadeIn  = ss(Math.min(1, (t - 1.1) / 0.25));
+      const fadeOut = t > 2.55 ? 1 - ss((t - 2.55) / 0.25) : 1;
+      const a = fadeIn * fadeOut;
+      ctx.globalAlpha = a;
+      const isAmber = t < 2.1;
+      ctx.fillStyle = isAmber ? AMBER : GREEN;
+      ctx.font = mono(11, true); ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+      ctx.fillText(isAmber ? '// interrupt fired' : '// approved', cx, labelY);
+      ctx.fillStyle = DIM; ctx.font = mono(10);
+      ctx.fillText(isAmber ? 'waiting for decision' : 'pipeline resumed', cx, labelY - 16);
+      ctx.globalAlpha = 1;
+    }
+
+    if (!reduced) requestAnimationFrame(draw);
+  }
+
+  if (reduced) { elapsed = 4.0; lastT = performance.now(); draw(performance.now()); }
+  else requestAnimationFrame(draw);
+})();
+</script>
+
+<section class="af-section" id="stack-placeholder" style="display:none"></section>
+<!-- gate canvas script above; stack section follows -->
+<script>document.getElementById('stack-placeholder')?.remove();</script>
+    </div>
+  </div>
+</section>
+
+<section class="af-section" id="stack">
+  <div class="container">
+    <span class="label reveal">// built with</span>
+    <h2 class="reveal">Stack.</h2>
+    <div class="stack-list reveal">
+      <span class="hi">LangGraph</span>
+      <span class="hi">n8n</span>
+      <span class="hi">Claude API</span>
+      <span class="hi">Claude Code</span>
+      <span class="hi">LangGraph MCP Server</span>
+      <span>Python</span>
+      <span>TypeScript</span>
+      <span>Docker</span>
+      <span>Linux</span>
+      <span>Qdrant</span>
+      <span>OpenAI embeddings</span>
+      <span>Langfuse</span>
+      <span>TrueNAS SCALE</span>
+      <span>GitHub Actions</span>
+    </div>
+  </div>
+</section>
+
+<section class="ask" id="ask">
+  <div class="container">
+    <span class="label reveal">// live demonstration</span>
+    <h2 class="reveal" style="font-size:clamp(40px,6vw,72px);font-weight:500;letter-spacing:-0.04em;line-height:0.96;margin:16px 0 20px;">Ask Archie.</h2>
+    <p class="lead reveal" style="font-size:clamp(16px,1.6vw,20px);color:var(--fg-dim);max-width:60ch;">Archie is the Architect behind AppFactory. Ask how it works, what decisions were made and why, or what's next. This is a live demonstration of the capability this page describes.</p>
+
+    <div class="chat reveal" role="region" aria-label="Ask Archie chat">
+      <div class="chat-head">
+        <span class="a-mark">A</span>
+        <span>Archie</span>
+        <span class="status">live</span>
+      </div>
+      <div class="chat-body" id="chat-body" aria-live="polite">
+        <div class="chat-msg user">So it's basically just ChatGPT with some extra steps?</div>
+        <div class="chat-msg archie">
+          <span class="name">Archie</span>Not quite. ChatGPT is a model — AppFactory is a pipeline that orchestrates multiple specialised agents through a stateful graph with approval gates and persistent memory. The model is one component. The architecture is the thing. What specifically are you trying to understand?
+        </div>
+      </div>
+      <form class="chat-input" id="chat-form">
+        <input id="chat-input" type="text" placeholder="Ask anything about AppFactory..." autocomplete="off" aria-label="Your message">
+        <button type="submit" id="chat-send">Send</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<section class="gh">
+  <div class="container">
+    <div class="gh-row reveal">
+      <div>
+        <span class="label" style="display:block;margin-bottom:8px;">// repository</span>
+        <p>AppFactory is in active development. Architecture, agent definitions, and pipeline design are publicly documented.</p>
+      </div>
+      <a class="gh-link" href="https://github.com/Geoff-Walker/AppFactory-Architecture" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .3a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2c-3.3.7-4-1.6-4-1.6-.6-1.3-1.4-1.7-1.4-1.7-1.1-.7.1-.7.1-.7 1.2.1 1.9 1.2 1.9 1.2 1.1 1.9 2.9 1.4 3.6 1 .1-.8.4-1.4.8-1.7-2.7-.3-5.5-1.3-5.5-5.9 0-1.3.5-2.4 1.2-3.2-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0c2.3-1.5 3.3-1.2 3.3-1.2.6 1.7.2 2.9.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .3"/></svg>
+        github.com/Geoff-Walker/AppFactory-Architecture
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <span>© 2026 Geoff Walker</span>
+    <span>AppFactory · v.2026.04</span>
+  </div>
+</footer>
+
+<script src="assets/nav-controls.js"></script>
+<script src="assets/shared.js"></script>
+<script src="assets/hero-anim.js?v=5"></script>
+<script src="assets/chat.js"></script>
+
+</body>
+</html>

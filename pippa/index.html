@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pippa — an AI welfare adviser</title>
+  <meta name="description" content="Case study: Pippa, an AI welfare adviser built to help UK claimants navigate the PIP process." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/assets/portfolio-nav.css" />
+  <link rel="stylesheet" href="/assets/archie-chat.css" />
+  <link rel="stylesheet" href="colors_and_type.css" />
+  <style>
+    /* Pippa nav — Telegram Night Mode surface, not AppFactory charcoal */
+    .pf-nav {
+      background: rgba(31, 44, 57, 0.94);
+      border-bottom: 1px solid transparent;
+    }
+    .pf-nav.scrolled { border-bottom-color: #232E3C; }
+    .pf-nav-mark { color: #FFFFFF; }
+    .pf-nav-mark span { color: #8392A1; }
+    .pf-nav-links a { color: #8392A1; }
+    .pf-nav-links a:hover { color: #6AB3F3; }
+    .pf-projects-btn { color: #8392A1; }
+    .pf-projects-btn:hover,
+    .pf-projects-btn[aria-expanded="true"] { color: #6AB3F3; }
+    .pf-projects-drop { background: #1F2C39; border-color: #232E3C; }
+    .pf-projects-drop a { color: #8392A1; }
+    .pf-projects-drop a:hover { background: #243343; color: #6AB3F3; }
+    .pf-burger span { background: #8392A1; }
+    .pf-tray { background: rgba(31,44,57,0.98); border-top-color: #232E3C; }
+    .pf-tray-label { color: #3a4a5a; }
+    .pf-tray a { color: #8392A1; border-bottom-color: #232E3C; }
+    .pf-tray a:hover { color: #6AB3F3; }
+  </style>
+  <link rel="stylesheet" href="telegram-chat.css" />
+  <link rel="stylesheet" href="portfolio.css?v=7" />
+  <style>.pp-hero { padding-top: calc(48px * var(--pp-space-scale, 1) + 56px) !important; }</style>
+</head>
+<body>
+  <nav class="pf-nav" id="pf-nav">
+    <div class="pf-nav-inner">
+      <a href="/" class="pf-nav-mark">geoff walker<span> // ai systems</span></a>
+      <div class="pf-nav-links">
+        <a href="#why-heading">Why Pippa</a>
+        <a href="#how-heading">Design</a>
+        <a href="#sources-heading">Sources</a>
+        <div class="pf-projects-wrap">
+          <button class="pf-projects-btn" aria-haspopup="true" aria-expanded="false">Projects <span class="pf-chevron" aria-hidden="true">▾</span></button>
+          <div class="pf-projects-drop">
+            <a href="/appfactory.html">AppFactory</a>
+            <a href="/familycookbook/">FamilyCookbook</a>
+            <a href="/pippa/">Pippa</a>
+            <a href="/tom/">Tom</a>
+          </div>
+        </div>
+      </div>
+      <button class="pf-burger" aria-label="Open menu" aria-expanded="false" aria-controls="pf-tray">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+    <div class="pf-tray" id="pf-tray">
+      <p class="pf-tray-label">On this page</p>
+      <a href="#why-heading">Why Pippa</a>
+      <a href="#how-heading">Design</a>
+      <a href="#sources-heading">Sources</a>
+      <p class="pf-tray-label">Projects</p>
+      <a href="/appfactory.html">AppFactory</a>
+      <a href="/familycookbook/">FamilyCookbook</a>
+      <a href="/pippa/">Pippa</a>
+      <a href="/tom/">Tom</a>
+    </div>
+  </nav>
+
+  <div class="pp-page" id="pp-root" data-screen-label="Pippa /pippa portfolio page"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <script type="text/babel" src="tweaks-panel.jsx"></script>
+  <script type="text/babel" src="TelegramPhone.jsx"></script>
+  <script type="text/babel" src="PippaConversation.jsx"></script>
+  <script type="text/babel" src="Sections.jsx"></script>
+
+  <script type="text/babel">
+    const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+      "sectionSpacing": 1,
+      "bgDim": 0.85
+    }/*EDITMODE-END*/;
+
+    function App() {
+      const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+      React.useEffect(() => {
+        const root = document.getElementById("pp-root");
+        root.style.setProperty("--pp-space-scale", String(t.sectionSpacing));
+        root.style.setProperty("--pp-bg-alpha", String(t.bgDim));
+      }, [t.sectionSpacing, t.bgDim]);
+      return (
+        <>
+          <Hero />
+          <WhyPippa />
+          <ChatSection />
+          <HowDesigned />
+          <WhatIWontShow />
+          <Sources />
+          <Close />
+          <TweaksPanel>
+            <TweakSection label="Layout" />
+            <TweakSlider
+              label="Section spacing"
+              value={t.sectionSpacing}
+              min={0.25} max={2} step={0.05}
+              unit="×"
+              onChange={(v) => setTweak("sectionSpacing", Number(v.toFixed(2)))}
+            />
+            <TweakSection label="Background" />
+            <TweakSlider
+              label="Doodle dimming"
+              value={t.bgDim}
+              min={0} max={0.9} step={0.05}
+              onChange={(v) => setTweak("bgDim", Number(v.toFixed(2)))}
+            />
+          </TweaksPanel>
+        </>
+      );
+    }
+    ReactDOM.createRoot(document.getElementById("pp-root")).render(<App />);
+  </script>
+
+  <div class="archie-panel" role="dialog" aria-label="Chat with Archie">
+    <div class="archie-panel-head">
+      <span class="ap-mark">A</span>
+      <span>Archie</span>
+      <span class="ap-status">online</span>
+    </div>
+    <div class="archie-panel-body"></div>
+    <form class="archie-panel-foot">
+      <input type="text" placeholder="Ask about Geoff's work…" autocomplete="off" aria-label="Your message">
+      <button type="submit">Send</button>
+    </form>
+  </div>
+  <div class="archie-fab">
+    <button class="archie-fab-btn" aria-label="Chat with Archie" aria-expanded="false">A</button>
+  </div>
+  <script src="/assets/nav-controls.js"></script>
+  <script src="/assets/archie-chat.js"></script>
+</body>
+</html>

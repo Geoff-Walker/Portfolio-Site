@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FamilyCookbook — Geoff Walker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Source+Sans+3:wght@400;500;600&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/portfolio-nav.css">
+  <link rel="stylesheet" href="/assets/archie-chat.css">
+  <style>
+    /* FamilyCookbook nav — same dark shell, cookbook blue accent */
+    .pf-nav-mark span { color: #5a7490; }
+    .pf-nav-links a { color: #6b8aad; }
+    .pf-nav-links a:hover { color: #a8c8f0; }
+    .pf-projects-btn { color: #6b8aad; }
+    .pf-projects-btn:hover,
+    .pf-projects-btn[aria-expanded="true"] { color: #a8c8f0; }
+    .pf-burger span { background: #6b8aad; }
+    .pf-tray-label { color: #2a3f58; }
+    .pf-tray a { color: #6b8aad; }
+    .pf-tray a:hover { color: #a8c8f0; }
+  </style>
+
+  <style>
+    /* ─────────────────────────────────────────────────────────────
+       Portfolio shell variables (dark, matches AppFactory page)
+    ──────────────────────────────────────────────────────────────*/
+    :root {
+      --p-bg:         #09090b;
+      --p-bg-1:       #0f172a;
+      --p-border:     #1e293b;
+      --p-border-hi:  #334155;
+      --p-text:       #f8fafc;
+      --p-text-dim:   #94a3b8;
+      --p-text-dimmer:#475569;
+      --p-accent:     #1E5FA8; /* matches Geoff's app accent */
+      --p-accent-glow:rgba(30,95,168,0.18);
+    }
+
+    /* ─────────────────────────────────────────────────────────────
+       FamilyCookbook Geoff-theme variables (exact match to app)
+    ──────────────────────────────────────────────────────────────*/
+    .fc-app {
+      --color-accent:          #1E5FA8;
+      --color-accent-hover:    #174D8A;
+      --color-primary:         #1E5FA8;
+      --color-surface-1:       #F7F9FC;
+      --color-surface-2:       #FFFFFF;
+      --color-surface-3:       #EDF2F8;
+      --color-background:      #FFFFFF;
+      --color-text-primary:    #1A2535;
+      --color-text-secondary:  #3D4C60;
+      --color-text-muted:      #6B7D95;
+      --color-text-tertiary:   #6B7C95;
+      --color-border:          #D6E0EC;
+      --color-border-subtle:   #DDE1EA;
+      --color-tag-bg:          #E3EDF8;
+      --color-tag-text:        #1E5FA8;
+      --color-rating-fill:     #F5A623;
+      --color-surface-inverse: #1A2B4A;
+      --color-text-on-dark:    #FFFFFF;
+      --color-text-on-dark-dim:#9BAFD0;
+      --shadow-1: 0 1px 3px rgba(26,37,53,0.08);
+      --shadow-2: 0 4px 16px rgba(26,37,53,0.14);
+      --font-heading: 'DM Sans', -apple-system, sans-serif;
+      --font-body:    'Source Sans 3', -apple-system, sans-serif;
+    }
+
+    /* ─────────────────────────────────────────────────────────────
+       Reset
+    ──────────────────────────────────────────────────────────────*/
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      background: var(--p-bg);
+      color: var(--p-text);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ─────────────────────────────────────────────────────────────
+       Portfolio nav
+    ──────────────────────────────────────────────────────────────*/
+    .p-nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      padding: 1rem 2rem;
+      background: rgba(9,9,11,0.88);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--p-border);
+    }
+    .p-nav-back {
+      display: flex; align-items: center; gap: 0.5rem;
+      color: var(--p-text-dim); text-decoration: none;
+      font-size: 0.875rem; letter-spacing: 0.02em;
+      transition: color 0.2s;
+    }
+    .p-nav-back:hover { color: var(--p-text); }
+    .p-nav-back svg { width: 16px; height: 16px; }
+    .p-nav-title { margin-left: auto; font-size: 0.875rem; color: var(--p-text-dimmer); }
+
+    /* ─────────────────────────────────────────────────────────────
+       Portfolio hero
+    ──────────────────────────────────────────────────────────────*/
+    .p-hero {
+      padding: 7.5rem 2rem 3.5rem;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .p-hero-label {
+      display: inline-block;
+      font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.15em; text-transform: uppercase;
+      color: var(--p-accent); margin-bottom: 1rem;
+    }
+    .p-hero h1 {
+      font-size: clamp(2.25rem, 5vw, 3.5rem);
+      font-weight: 700; letter-spacing: -0.025em; line-height: 1.05;
+      margin-bottom: 1.25rem;
+    }
+    .p-hero-sub {
+      font-size: 1.05rem; color: var(--p-text-dim);
+      line-height: 1.75; max-width: 560px; margin-bottom: 1.25rem;
+    }
+    .p-hero-personal {
+      font-size: 0.9rem; color: var(--p-text-dimmer);
+      font-style: italic; padding-left: 1rem;
+      border-left: 2px solid var(--p-accent); line-height: 1.6;
+    }
+
+    /* ─────────────────────────────────────────────────────────────
+       Demo frame wrapper
+    ──────────────────────────────────────────────────────────────*/
+    .demo-outer {
+      max-width: 980px;
+      margin: 0 auto 4rem;
+      padding: 0 2rem;
+    }
+
+    .demo-label {
+      font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.15em; text-transform: uppercase;
+      color: var(--p-accent); margin-bottom: 1rem;
+    }
+
+    .browser-frame {
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid var(--p-border-hi);
+      box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+    }
+
+    /* macOS-style browser chrome */
+    .browser-chrome {
+      background: #1e1e1e;
+      height: 38px;
+      display: flex;
+      align-items: center;
+      gap: 0;
+      padding: 0 12px;
+      border-bottom: 1px solid #333;
+      flex-shrink: 0;
+    }
+    .browser-dots { display: flex; gap: 6px; margin-right: 12px; }
+    .browser-dots span {
+      width: 12px; height: 12px; border-radius: 50%;
+    }
+    .browser-dots span:nth-child(1) { background: #ff5f57; }
+    .browser-dots span:nth-child(2) { background: #ffbd2e; }
+    .browser-dots span:nth-child(3) { background: #28c840; }
+    .browser-url {
+      flex: 1;
+      background: #2d2d2d;
+      border-radius: 5px;
+      height: 22px;
+      display: flex;
+      align-items: center;
+      padding: 0 10px;
+      font-family: monospace;
+      font-size: 0.7rem;
+      color: #aaa;
+      max-width: 360px;
+      margin: 0 auto;
+    }
+
+    /* ─────────────────────────────────────────────────────────────
+       App body — faithfully matches FamilyCookbook Geoff theme
+    ──────────────────────────────────────────────────────────────*/
+    .fc-app {
+      background: var(--color-surface-1);
+      font-family: var(--font-body);
+      color: var(--color-text-primary);
+      min-height: 520px;
+      max-height: 560px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* App header */
+    .fc-header {
+      position: sticky; top: 0; z-index: 10;
+      height: 56px;
+      background: var(--color-surface-inverse);
+      box-shadow: var(--shadow-1);
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      gap: 12px;
+    }
+    .fc-user-toggle {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--color-accent);
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-heading);
+      font-size: 0.8rem; font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+    }
+    .fc-app-title {
+      flex: 1; text-align: center;
+      font-family: var(--font-heading);
+      font-size: 1.05rem; font-weight: 700;
+      color: var(--color-text-on-dark);
+    }
+    .fc-burger {
+      width: 44px; height: 44px;
+      border: none; background: transparent;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 5px; cursor: pointer;
+    }
+    .fc-burger span {
+      display: block; width: 20px; height: 2px;
+      background: var(--color-text-on-dark);
+      border-radius: 2px;
+    }
+
+    /* Page content */
+    .fc-page {
+      padding: 16px;
+      overflow-y: auto;
+      max-height: calc(560px - 56px);
+    }
+
+    /* Page header */
+    .fc-page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .fc-page-title {
+      font-family: var(--font-heading);
+      font-size: 1.75rem; font-weight: 700;
+      color: var(--color-text-primary);
+    }
+    .fc-btn-add {
+      background: var(--color-accent);
+      color: #fff; border: none;
+      border-radius: 12px;
+      padding: 8px 16px;
+      font-family: var(--font-body);
+      font-size: 0.875rem; font-weight: 500;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    /* Filter bar */
+    .fc-filter-bar {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      background: var(--color-surface-1);
+      padding: 8px 0 12px;
+      margin-bottom: 4px;
+    }
+
+    /* Search input wrapper — pill shape */
+    .fc-search-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+      height: 44px;
+      border-radius: 9999px;
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border);
+      transition: border 0.15s, box-shadow 0.15s;
+    }
+    .fc-search-wrap.focused {
+      border: 2px solid var(--color-primary);
+      box-shadow: 0 0 0 4px rgba(30,95,168,0.12);
+    }
+
+    .fc-search-icon {
+      position: absolute; left: 12px;
+      display: flex; align-items: center;
+      color: var(--color-text-tertiary);
+      pointer-events: none;
+    }
+
+    .fc-search-input-area {
+      flex: 1;
+      padding: 0 40px 0 42px;
+      font-family: var(--font-body);
+      font-size: 1rem;
+      color: var(--color-text-primary);
+      display: flex; align-items: center;
+      min-height: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+    .fc-search-typed { color: var(--color-text-primary); }
+
+    .fc-cursor {
+      display: inline-block;
+      width: 2px; height: 1.1em;
+      background: var(--color-primary);
+      vertical-align: text-bottom;
+      margin-left: 1px;
+      animation: fc-blink 1s step-end infinite;
+    }
+    @keyframes fc-blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+    .fc-search-placeholder {
+      position: absolute;
+      left: 42px; top: 50%;
+      transform: translateY(-50%);
+      font-family: var(--font-body);
+      font-size: 1rem;
+      color: var(--color-text-tertiary);
+      pointer-events: none;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: calc(100% - 80px);
+      transition: opacity 0.15s;
+    }
+
+    /* Spinner (replaces icon during search) */
+    .fc-spinner {
+      display: none;
+      position: absolute; left: 12px;
+      width: 20px; height: 20px;
+      border: 2px solid rgba(30,95,168,0.25);
+      border-top-color: var(--color-primary);
+      border-radius: 50%;
+      animation: fc-spin 0.7s linear infinite;
+    }
+    @keyframes fc-spin { to { transform: rotate(360deg); } }
+    .fc-search-wrap.searching .fc-search-icon { display: none; }
+    .fc-search-wrap.searching .fc-spinner { display: block; }
+
+    /* Kbd hint */
+    .fc-search-kbd {
+      position: absolute; right: 12px;
+      font-family: var(--font-body);
+      font-size: 0.75rem;
+      color: var(--color-text-tertiary);
+      background: var(--color-surface-1);
+      border-radius: 4px;
+      padding: 2px 6px;
+      pointer-events: none;
+    }
+    .fc-search-wrap.focused .fc-search-kbd,
+    .fc-search-wrap.has-value .fc-search-kbd { display: none; }
+    .fc-search-placeholder-text { transition: opacity 0.15s; }
+    .fc-search-wrap.has-value .fc-search-placeholder,
+    .fc-search-wrap.focused .fc-search-placeholder { opacity: 0; }
+
+    /* Recipe grid */
+    .fc-recipe-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    /* Recipe card */
+    .fc-card {
+      background: var(--color-surface-2);
+      border-radius: 12px;
+      box-shadow: var(--shadow-1);
+      overflow: hidden;
+      cursor: pointer;
+      transition: box-shadow 0.18s, transform 0.18s, opacity 0.3s;
+    }
+    .fc-card:hover {
+      box-shadow: var(--shadow-2);
+      transform: translateY(-1px);
+    }
+    .fc-card.entering {
+      animation: fc-card-in 0.35s ease forwards;
+    }
+    @keyframes fc-card-in {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Thumbnail — 16:9 */
+    .fc-thumb {
+      width: 100%;
+      padding-top: 56.25%;
+      position: relative;
+      background: var(--color-surface-3);
+      border-radius: 12px 12px 0 0;
+      overflow: hidden;
+    }
+    .fc-thumb img {
+      position: absolute; top: 0; left: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+    }
+    .fc-thumb-icon {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 1.75rem;
+    }
+
+    /* Card body */
+    .fc-card-body {
+      padding: 12px 12px 14px;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .fc-card-title {
+      font-family: var(--font-heading);
+      font-size: 1rem; font-weight: 600;
+      color: var(--color-text-primary);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .fc-card-time {
+      font-family: var(--font-body);
+      font-size: 0.8rem;
+      color: var(--color-text-muted);
+    }
+
+    /* Tags */
+    .fc-card-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+    .fc-tag {
+      font-family: var(--font-body);
+      font-size: 0.78rem;
+      background: var(--color-tag-bg);
+      color: var(--color-tag-text);
+      padding: 2px 8px;
+      border-radius: 9999px;
+    }
+
+    /* Ratings */
+    .fc-card-ratings {
+      display: flex; gap: 16px;
+      margin-top: auto; padding-top: 6px;
+    }
+    .fc-rating-row { display: flex; align-items: center; gap: 6px; }
+    .fc-rating-label {
+      font-family: var(--font-body);
+      font-size: 0.78rem; color: var(--color-text-muted);
+      width: 36px;
+    }
+    .fc-rating-val {
+      font-family: var(--font-body);
+      font-size: 0.875rem; font-weight: 500;
+      color: var(--color-rating-fill);
+    }
+    .fc-rating-val.empty { color: var(--color-text-muted); font-weight: 400; }
+
+    /* ─────────────────────────────────────────────────────────────
+       Portfolio feature callout section
+    ──────────────────────────────────────────────────────────────*/
+    .p-section {
+      max-width: 900px; margin: 0 auto;
+      padding: 3rem 2rem;
+    }
+    .p-section-label {
+      font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.15em; text-transform: uppercase;
+      color: var(--p-accent); margin-bottom: 0.875rem;
+    }
+    .p-section-heading {
+      font-size: clamp(1.3rem, 2.5vw, 1.75rem);
+      font-weight: 600; letter-spacing: -0.01em; margin-bottom: 0.75rem;
+    }
+    .p-section-body {
+      font-size: 0.93rem; color: var(--p-text-dim);
+      line-height: 1.75; max-width: 580px; margin-bottom: 2rem;
+    }
+
+    /* Image gen reveal */
+    .reveal-container {
+      position: relative; height: 320px;
+      cursor: col-resize; user-select: none;
+      border-radius: 10px; overflow: hidden;
+      border: 1px solid var(--p-border-hi);
+    }
+    .reveal-before, .reveal-after {
+      position: absolute; inset: 0; overflow: hidden;
+    }
+    .reveal-after { clip-path: inset(0 50% 0 0); }
+    .reveal-before img, .reveal-after img {
+      width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none;
+    }
+    .reveal-before img { filter: none; }
+    .reveal-divider {
+      position: absolute; top: 0; bottom: 0;
+      width: 2px; background: rgba(255,255,255,0.9);
+      left: 50%; transform: translateX(-50%);
+      z-index: 10; pointer-events: none;
+    }
+    .reveal-divider::after {
+      content: ''; position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 32px; height: 32px; background: white; border-radius: 50%;
+      border: 3px solid #1a1a1a; box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    }
+    .reveal-labels {
+      position: absolute; bottom: 1rem; left: 0; right: 0;
+      display: flex; justify-content: space-between;
+      padding: 0 1.25rem; z-index: 20; pointer-events: none;
+    }
+    .reveal-label {
+      font-size: 0.62rem; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      padding: 0.25rem 0.6rem; border-radius: 4px;
+      background: rgba(0,0,0,0.65); backdrop-filter: blur(4px);
+    }
+    .reveal-label.before { color: #94a3b8; }
+    .reveal-label.after  { color: #93c5fd; }
+    .reveal-caption {
+      font-size: 0.78rem; color: var(--p-text-dimmer);
+      margin-top: 0.625rem;
+    }
+    .reveal-caption strong { color: var(--p-text-dim); }
+
+    /* Feature text cards */
+    .p-feature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+    .p-feature-card {
+      background: var(--p-bg-1); border: 1px solid var(--p-border);
+      border-radius: 10px; padding: 1.25rem;
+    }
+    .p-feature-title { font-size: 0.875rem; font-weight: 600; margin-bottom: 0.4rem; }
+    .p-feature-body  { font-size: 0.78rem; color: var(--p-text-dim); line-height: 1.65; }
+
+    /* Stack section */
+    .p-stack-section {
+      max-width: 900px; margin: 0 auto;
+      padding: 3rem 2rem 5rem;
+      border-top: 1px solid var(--p-border);
+    }
+    .p-stack-tags { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1.1rem 0 2.25rem; }
+    .p-stack-tag {
+      font-size: 0.72rem; font-weight: 500; letter-spacing: 0.04em;
+      color: var(--p-text-dimmer); padding: 0.3rem 0.7rem;
+      border: 1px solid var(--p-border); border-radius: 4px;
+    }
+    .p-github-link {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      color: var(--p-text-dim); text-decoration: none;
+      font-size: 0.875rem; padding: 0.6rem 1.25rem;
+      border: 1px solid var(--p-border); border-radius: 6px;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .p-github-link:hover { color: var(--p-text); border-color: var(--p-border-hi); }
+    .p-github-link svg { width: 18px; height: 18px; }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .fc-recipe-grid { grid-template-columns: repeat(2, 1fr); }
+      .p-feature-grid { grid-template-columns: 1fr; }
+      .fc-app-title   { font-size: 0.9rem; }
+    }
+    @media (max-width: 520px) {
+      .fc-recipe-grid { grid-template-columns: 1fr; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .fc-card, .fc-card.entering { animation: none; opacity: 1; transform: none; }
+      .fc-cursor { animation: none; opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="pf-nav" id="pf-nav">
+  <div class="pf-nav-inner">
+    <a href="/" class="pf-nav-mark">geoff walker<span> // ai systems</span></a>
+    <div class="pf-nav-links">
+      <a href="#demo">Semantic search</a>
+      <a href="#image-gen">Image generation</a>
+      <a href="#features">Features</a>
+      <a href="#stack">Stack</a>
+      <div class="pf-projects-wrap">
+        <button class="pf-projects-btn" aria-haspopup="true" aria-expanded="false">Projects <span class="pf-chevron" aria-hidden="true">▾</span></button>
+        <div class="pf-projects-drop">
+          <a href="/appfactory.html">AppFactory</a>
+          <a href="/familycookbook/">FamilyCookbook</a>
+          <a href="/pippa/">Pippa</a>
+          <a href="/tom/">Tom</a>
+        </div>
+      </div>
+    </div>
+    <button class="pf-burger" aria-label="Open menu" aria-expanded="false" aria-controls="pf-tray">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+  <div class="pf-tray" id="pf-tray">
+    <p class="pf-tray-label">On this page</p>
+    <a href="#demo">Semantic search</a>
+    <a href="#image-gen">Image generation</a>
+    <a href="#features">Features</a>
+    <a href="#stack">Stack</a>
+    <p class="pf-tray-label">Projects</p>
+    <a href="/appfactory.html">AppFactory</a>
+    <a href="/familycookbook/">FamilyCookbook</a>
+    <a href="/pippa/">Pippa</a>
+    <a href="/tom/">Tom</a>
+  </div>
+</nav>
+
+<!-- Portfolio hero -->
+<header class="p-hero">
+  <span class="p-hero-label">Project</span>
+  <h1>FamilyCookbook</h1>
+  <p class="p-hero-sub">
+    A recipe application with semantic search and AI image generation.
+    Angular, .NET&nbsp;8, PostgreSQL with pgvector. In production and in daily use.
+  </p>
+  <p class="p-hero-personal">
+    Something I've always wanted to build. AppFactory made it simple and quick,
+    and me and my wife use it all the time.
+  </p>
+</header>
+
+<!-- ── App demo ── -->
+<div class="demo-outer" id="demo">
+  <p class="demo-label">Semantic Search — live demo</p>
+
+  <div class="browser-frame">
+    <!-- Browser chrome -->
+    <div class="browser-chrome">
+      <div class="browser-dots"><span></span><span></span><span></span></div>
+      <div class="browser-url">familycookbook.home / recipes</div>
+    </div>
+
+    <!-- FamilyCookbook app — Geoff theme -->
+    <div class="fc-app" id="fcApp">
+
+      <!-- App header -->
+      <header class="fc-header">
+        <div class="fc-user-toggle">G</div>
+        <span class="fc-app-title">Walker Family Cookbook</span>
+        <button class="fc-burger" aria-label="Menu">
+          <span></span><span></span><span></span>
+        </button>
+      </header>
+
+      <!-- Page -->
+      <div class="fc-page" id="fcPage">
+        <div class="fc-page-header">
+          <h1 class="fc-page-title">Recipes</h1>
+          <button class="fc-btn-add">+ Add Recipe</button>
+        </div>
+
+        <!-- Filter bar with search -->
+        <div class="fc-filter-bar">
+          <div class="fc-search-wrap" id="fcSearchWrap">
+            <span class="fc-search-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+            </span>
+            <span class="fc-spinner" id="fcSpinner"></span>
+            <div class="fc-search-input-area">
+              <span class="fc-search-typed" id="fcTyped"></span><span class="fc-cursor" id="fcCursor" style="display:none"></span>
+            </div>
+            <span class="fc-search-placeholder" id="fcPlaceholder">
+              Search by name, ingredient, or describe what you feel like&hellip;
+            </span>
+            <span class="fc-search-kbd"><kbd>Ctrl+K</kbd></span>
+          </div>
+        </div>
+
+        <!-- Recipe grid -->
+        <div class="fc-recipe-grid" id="fcGrid">
+
+          <!-- Initial 6 cards (full recipe list) -->
+          <div class="fc-card" data-state="initial">
+            <div class="fc-thumb">
+              <img src="../assets/quiche.png" alt="Quiche Lorraine">
+            </div>
+            <div class="fc-card-body">
+              <div class="fc-card-title">Quiche Lorraine</div>
+              <div class="fc-card-time">45 min</div>
+              <div class="fc-card-tags"><span class="fc-tag">French</span><span class="fc-tag">Baking</span></div>
+              <div class="fc-card-ratings">
+                <div class="fc-rating-row"><span class="fc-rating-label">Geoff</span><span class="fc-rating-val">8.5</span></div>
+                <div class="fc-rating-row"><span class="fc-rating-label">Helen</span><span class="fc-rating-val">9.0</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="fc-card" data-state="initial">
+            <div class="fc-thumb">
+              <img src="../assets/fish-and-chips.png" alt="Fish and Chips">
+            </div>
+            <div class="fc-card-body">
+              <div class="fc-card-title">Fish and Chips</div>
+              <div class="fc-card-time">50 min</div>
+              <div class="fc-card-tags"><span class="fc-tag">British</span><span class="fc-tag">Comfort</span></div>
+              <div class="fc-card-ratings">
+                <div class="fc-rating-row"><span class="fc-rating-label">Geoff</span><span class="fc-rating-val">9.5</span></div>
+                <div class="fc-rating-row"><span class="fc-rating-label">Helen</span><span class="fc-rating-val">8.0</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="fc-card" data-state="initial">
+            <div class="fc-thumb">
+              <img src="../assets/lemon-drizzle.png" alt="Lemon Drizzle Cake">
+            </div>
+            <div class="fc-card-body">
+              <div class="fc-card-title">Lemon Drizzle Cake</div>
+              <div class="fc-card-time">55 min</div>
+              <div class="fc-card-tags"><span class="fc-tag">Baking</span><span class="fc-tag">Dessert</span></div>
+              <div class="fc-card-ratings">
+                <div class="fc-rating-row"><span class="fc-rating-label">Geoff</span><span class="fc-rating-val">8.0</span></div>
+                <div class="fc-rating-row"><span class="fc-rating-label">Helen</span><span class="fc-rating-val">9.5</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="fc-card" data-state="initial">
+            <div class="fc-thumb">
+              <img src="https://images.unsplash.com/photo-1476718406336-bb5a9690ee2a?w=800&h=450&fit=crop&auto=format" alt="Spaghetti Carbonara">
+            </div>
+            <div class="fc-card-body">
+              <div class="fc-card-title">Spaghetti Carbonara</div>
+              <div class="fc-card-time">30 min</div>
+              <div class="fc-card-tags"><span class="fc-tag">Italian</span><span class="fc-tag">Pasta</span></div>
+              <div class="fc-card-ratings">
+                <div class="fc-rating-row"><span class="fc-rating-label">Geoff</span><span class="fc-rating-val">9.0</span></div>
+                <div class="fc-rating-row"><span class="fc-rating-label">Helen</span><span class="fc-rating-val">8.5</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="fc-card" data-state="initial">
+            <div class="fc-thumb">
+              <img src="https://www.themealdb.com/images/media/meals/ntafxw1763586291.jpg" alt="Chicken Tikka Masala">
+            </div>
+            <div class="fc-card-body">
+              <div class="fc-card-title">Chicken Tikka Masala</div>
+              <div class="fc-card-time">50 min</div>
+              <div class="fc-card-tags"><span class="fc-tag">Indian</span><span class="fc-tag">Comfort</span></div>
+              <div class="fc-card-ratings">
+                <div class="fc-rating-row"><span class="fc-rating-label">Geoff</span><span class="fc-rating-val">9.0</span></div>
+                <div class="fc-rating-row"><span class="fc-rating-label">Helen</span><span class="fc-rating-val">7.5</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="fc-card" data-state="initial">
+            <div class="fc-thumb">
+              <img src="../assets/mushroom-risotto.png" alt="Mushroom Risotto">
+            </div>
+            <div class="fc-card-body">
+              <div class="fc-card-title">Mushroom Risotto</div>
+              <div class="fc-card-time">35 min</div>
+              <div class="fc-card-tags"><span class="fc-tag">Italian</span><span class="fc-tag">Vegetarian</span></div>
+              <div class="fc-card-ratings">
+                <div class="fc-rating-row"><span class="fc-rating-label">Geoff</span><span class="fc-rating-val">8.0</span></div>
+                <div class="fc-rating-row"><span class="fc-rating-label">Helen</span><span class="fc-rating-val empty">—</span></div>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /fc-recipe-grid -->
+      </div><!-- /fc-page -->
+    </div><!-- /fc-app -->
+  </div><!-- /browser-frame -->
+</div><!-- /demo-outer -->
+
+<!-- ── Image gen ── -->
+<div class="p-section" id="image-gen">
+  <p class="p-section-label">AI Image Generation</p>
+  <h2 class="p-section-heading">Every recipe, beautifully presented</h2>
+  <p class="p-section-body">
+    Recipes without images — or with rough photos — can be enhanced with AI generation.
+    These are real generated images from the app. Drag to compare.
+  </p>
+
+  <div class="reveal-container" id="revealContainer">
+    <div class="reveal-before">
+      <img src="../assets/Screenshot 2026-04-26 001419.png" alt="Quiche Lorraine — original photo" draggable="false">
+    </div>
+    <div class="reveal-after" id="revealAfter">
+      <img src="../assets/quiche.png" alt="Quiche Lorraine — AI-generated image" draggable="false">
+    </div>
+    <div class="reveal-divider" id="revealDivider"></div>
+    <div class="reveal-labels">
+      <span class="reveal-label before">Uploaded photo</span>
+      <span class="reveal-label after">AI Generated</span>
+    </div>
+  </div>
+  <p class="reveal-caption"><strong>Quiche Lorraine</strong> — original uploaded photo vs AI-generated result. Real images from FamilyCookbook. Drag to compare.</p>
+</div>
+
+<!-- ── Features ── -->
+<div class="p-section" id="features" style="padding-top:0">
+  <p class="p-section-label">Features</p>
+  <h2 class="p-section-heading">Built for real use</h2>
+
+  <div class="p-feature-grid">
+    <div class="p-feature-card">
+      <div class="p-feature-title">Meal Planner &amp; Shopping List</div>
+      <div class="p-feature-body">Plan the week. The app generates a consolidated shopping list across all planned meals — deduped, sorted, ready to use.</div>
+    </div>
+    <div class="p-feature-card">
+      <div class="p-feature-title">Cook History &amp; Versioning</div>
+      <div class="p-feature-body">Every cook is recorded. Variations accumulate as a version history — promote any version to become the canonical recipe.</div>
+    </div>
+    <div class="p-feature-card">
+      <div class="p-feature-title">The Geoff Filter</div>
+      <div class="p-feature-body">A suggestion queue weighted by personal preference and how recently each recipe was cooked. Solves "what should I make?" without randomness.</div>
+    </div>
+    <div class="p-feature-card">
+      <div class="p-feature-title">Ratings &amp; Ingredient Scaling</div>
+      <div class="p-feature-body">Per-cook ratings tied to the specific version made. Servings adjust in real time across all stages — built into the cook flow.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Stack + GitHub ── -->
+<div class="p-stack-section" id="stack">
+  <p class="p-section-label">Built with</p>
+  <div class="p-stack-tags">
+    <span class="p-stack-tag">Angular</span>
+    <span class="p-stack-tag">TypeScript</span>
+    <span class="p-stack-tag">.NET 8</span>
+    <span class="p-stack-tag">C#</span>
+    <span class="p-stack-tag">PostgreSQL</span>
+    <span class="p-stack-tag">pgvector</span>
+    <span class="p-stack-tag">OpenAI Embeddings</span>
+    <span class="p-stack-tag">Docker</span>
+    <span class="p-stack-tag">GitHub Actions</span>
+  </div>
+  <a href="https://github.com/Geoff-Walker/FamilyCookbook" class="p-github-link" target="_blank" rel="noopener noreferrer">
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+    </svg>
+    github.com/Geoff-Walker/FamilyCookbook
+  </a>
+</div>
+
+<script>
+  // ── Search demo animation ────────────────────────────────────
+  const QUERY     = 'something warming and autumnal';
+  const typedEl   = document.getElementById('fcTyped');
+  const cursorEl  = document.getElementById('fcCursor');
+  const wrapEl    = document.getElementById('fcSearchWrap');
+  const placeholderEl = document.getElementById('fcPlaceholder');
+  const gridEl    = document.getElementById('fcGrid');
+  const initialGridHTML = gridEl.innerHTML; // snapshot before any animation
+
+  // Search result cards to swap in
+  const RESULTS = [
+    {
+      imgSrc: 'https://images.unsplash.com/photo-1476718406336-bb5a9690ee2a?w=800&h=450&fit=crop&auto=format',
+      title: 'Butternut Squash &amp; Ginger Soup',
+      time: '35 min', tags: ['Vegetarian','Autumnal'],
+      g: '—', h: '—', gEmpty: true, hEmpty: true
+    },
+    {
+      imgSrc: 'https://www.themealdb.com/images/media/meals/ntafxw1763586291.jpg',
+      title: 'Slow-Cooked Beef Stew',
+      time: '3 hr 30 min', tags: ['Comfort','British'],
+      g: '9.0', h: '8.5', gEmpty: false, hEmpty: false
+    },
+    {
+      imgSrc: 'https://www.themealdb.com/images/media/meals/w8umt11583268117.jpg',
+      title: "Shepherd's Pie",
+      time: '1 hr', tags: ['Hearty','British'],
+      g: '8.5', h: '9.0', gEmpty: false, hEmpty: false
+    }
+  ];
+
+  function makeResultCard(r, delay) {
+    const card = document.createElement('div');
+    card.className = 'fc-card entering';
+    card.style.animationDelay = delay + 'ms';
+    card.innerHTML = `
+      <div class="fc-thumb"><img src="${r.imgSrc}" alt="${r.title}" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;"></div>
+      <div class="fc-card-body">
+        <div class="fc-card-title">${r.title}</div>
+        <div class="fc-card-time">${r.time}</div>
+        <div class="fc-card-tags">${r.tags.map(t=>`<span class="fc-tag">${t}</span>`).join('')}</div>
+        <div class="fc-card-ratings">
+          <div class="fc-rating-row"><span class="fc-rating-label">Geoff</span><span class="fc-rating-val${r.gEmpty?' empty':''}">${r.g}</span></div>
+          <div class="fc-rating-row"><span class="fc-rating-label">Helen</span><span class="fc-rating-val${r.hEmpty?' empty':''}">${r.h}</span></div>
+        </div>
+      </div>`;
+    return card;
+  }
+
+  function resetDemo() {
+    // Fade out result cards
+    [...gridEl.children].forEach(c => {
+      c.style.opacity = '0';
+      c.style.transform = 'translateY(-6px)';
+      c.style.transition = 'opacity 0.25s, transform 0.25s';
+    });
+    setTimeout(() => {
+      // Restore original grid
+      gridEl.innerHTML = initialGridHTML;
+      // Reset search bar
+      typedEl.innerHTML = '';
+      cursorEl.style.display = 'none';
+      wrapEl.classList.remove('focused', 'has-value', 'searching');
+      placeholderEl.style.opacity = '1';
+      // Brief pause then restart
+      setTimeout(runSearchDemo, 900);
+    }, 300);
+  }
+
+  function runSearchDemo() {
+    // Step 1: focus search bar, show cursor
+    wrapEl.classList.add('focused', 'has-value');
+    placeholderEl.style.opacity = '0';
+    cursorEl.style.display = 'inline-block';
+
+    // Step 2: type query
+    let i = 0;
+    const tick = setInterval(() => {
+      typedEl.innerHTML = QUERY.slice(0, ++i);
+      if (i >= QUERY.length) {
+        clearInterval(tick);
+
+        // Step 3: spinner
+        setTimeout(() => {
+          cursorEl.style.display = 'none';
+          wrapEl.classList.add('searching');
+
+          // Step 4: swap cards, then schedule reset
+          setTimeout(() => {
+            wrapEl.classList.remove('searching');
+
+            [...gridEl.children].forEach(c => {
+              c.style.opacity = '0';
+              c.style.transform = 'translateY(-6px)';
+              c.style.transition = 'opacity 0.2s, transform 0.2s';
+            });
+
+            setTimeout(() => {
+              gridEl.innerHTML = '';
+              RESULTS.forEach((r, idx) => gridEl.appendChild(makeResultCard(r, idx * 120)));
+              // Loop — reset after ~7s of showing results
+              setTimeout(resetDemo, 7000);
+            }, 220);
+
+          }, 900);
+        }, 400);
+      }
+    }, 50);
+  }
+
+  // Fire once on first scroll into view
+  let demoTriggered = false;
+  new IntersectionObserver(entries => {
+    if (entries[0].isIntersecting && !demoTriggered) {
+      demoTriggered = true;
+      setTimeout(runSearchDemo, 600);
+    }
+  }, { threshold: 0.4 }).observe(document.getElementById('fcApp'));
+
+
+  // ── Before/After slider ──────────────────────────────────────
+  const rc       = document.getElementById('revealContainer');
+  const afterEl  = document.getElementById('revealAfter');
+  const divEl    = document.getElementById('revealDivider');
+  let dragging   = false;
+  let swept      = false;
+
+  function setReveal(clientX) {
+    const r   = rc.getBoundingClientRect();
+    const pct = Math.min(Math.max((clientX - r.left) / r.width, 0.02), 0.98);
+    afterEl.style.clipPath = `inset(0 ${((1-pct)*100).toFixed(1)}% 0 0)`;
+    divEl.style.left       = `${(pct*100).toFixed(1)}%`;
+  }
+
+  new IntersectionObserver(entries => {
+    if (entries[0].isIntersecting && !swept) {
+      swept = true;
+      let pos = 0.04;
+      const t = setInterval(() => {
+        pos += 0.007;
+        setReveal(rc.getBoundingClientRect().left + pos * rc.getBoundingClientRect().width);
+        if (pos >= 0.96) clearInterval(t);
+      }, 16);
+    }
+  }, { threshold: 0.5 }).observe(rc);
+
+  rc.addEventListener('mousedown',  e => { dragging = true;  setReveal(e.clientX); });
+  rc.addEventListener('touchstart', e => { dragging = true;  setReveal(e.touches[0].clientX); }, { passive: true });
+  window.addEventListener('mousemove',  e => { if (dragging) setReveal(e.clientX); });
+  window.addEventListener('touchmove',  e => { if (dragging) setReveal(e.touches[0].clientX); }, { passive: true });
+  window.addEventListener('mouseup',  () => dragging = false);
+  window.addEventListener('touchend', () => dragging = false);
+</script>
+
+<div class="archie-panel" role="dialog" aria-label="Chat with Archie">
+  <div class="archie-panel-head">
+    <span class="ap-mark">A</span>
+    <span>Archie</span>
+    <span class="ap-status">online</span>
+  </div>
+  <div class="archie-panel-body"></div>
+  <form class="archie-panel-foot">
+    <input type="text" placeholder="Ask about Geoff's work…" autocomplete="off" aria-label="Your message">
+    <button type="submit">Send</button>
+  </form>
+</div>
+<div class="archie-fab">
+  <button class="archie-fab-btn" aria-label="Chat with Archie" aria-expanded="false">A</button>
+</div>
+<script src="/assets/nav-controls.js"></script>
+<script src="/assets/archie-chat.js"></script>
+</body>
+</html>

@@ -1,0 +1,691 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Geoff Walker — AI Systems Engineer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/shared.css">
+<link rel="stylesheet" href="assets/portfolio-nav.css">
+<link rel="stylesheet" href="assets/archie-chat.css">
+<style>
+  /* Home-page dropdown + tray — dark AppFactory theme */
+  .pf-projects-btn { color: var(--fg-dim); font-family: "JetBrains Mono", monospace; font-size: 12px; letter-spacing: 0.04em; }
+  .pf-projects-btn:hover,
+  .pf-projects-btn[aria-expanded="true"] { color: var(--fg); }
+  .pf-projects-drop { background: var(--bg-2); border-color: var(--rule); }
+  .pf-projects-drop a { color: var(--fg-dim); font-size: 12px; letter-spacing: 0.03em; }
+  .pf-projects-drop a:hover { background: var(--rule); color: var(--fg); }
+  .pf-burger span { background: var(--fg-dim); }
+  .pf-tray { background: rgba(9,9,11,0.97); border-top-color: var(--rule); }
+  .pf-tray-label { color: var(--fg-dimmer); }
+  .pf-tray a { color: var(--fg-dim); border-bottom-color: var(--rule); font-size: 13px; letter-spacing: 0.02em; }
+  .pf-tray a:hover { color: var(--fg); }
+</style>
+<style>
+/* Index-specific styles */
+.hero {
+  position: relative; min-height: 100vh; min-height: 100svh;
+  padding-top: 80px; display: grid; align-items: center; overflow: hidden;
+}
+#hero-canvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; }
+.hero-grid {
+  position: relative; z-index: 2;
+  display: grid; grid-template-columns: 1fr auto;
+  gap: clamp(32px, 6vw, 80px); align-items: center;
+  padding: 60px 0 80px;
+}
+@media (max-width: 860px) { .hero-grid { grid-template-columns: 1fr; } }
+.hero-text { max-width: 720px; }
+.hero-name { font-size: clamp(14px, 1.6vw, 16px); font-weight: 500; color: var(--fg-dim); margin-bottom: 8px; }
+.hero-role {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--accent); margin-bottom: clamp(28px, 4vw, 44px);
+  display: inline-block; padding: 6px 10px;
+  border: 1px solid color-mix(in oklab, var(--accent) 40%, transparent);
+  border-radius: 2px;
+  background: color-mix(in oklab, var(--accent) 8%, transparent);
+}
+.hero-line {
+  font-size: clamp(32px, 5.4vw, 64px); font-weight: 500;
+  letter-spacing: -0.035em; line-height: 1.04;
+  text-wrap: balance; margin-bottom: 28px;
+}
+.hero-line em { font-style: normal; color: var(--accent); }
+.hero-sub { font-size: clamp(15px, 1.4vw, 18px); line-height: 1.55; color: var(--fg-dim); max-width: 56ch; text-wrap: pretty; }
+.hero-portrait { position: relative; width: clamp(220px, 28vw, 360px); aspect-ratio: 823 / 1139; justify-self: end; }
+.hero-portrait img {
+  width: 100%; height: 100%; object-fit: contain;
+  filter: drop-shadow(0 0 80px color-mix(in oklab, var(--accent) 18%, transparent));
+}
+@media (max-width: 860px) { .hero-portrait { justify-self: start; width: clamp(180px, 50vw, 260px); } }
+
+.hero-meta {
+  position: absolute; bottom: 24px; left: var(--pad); right: var(--pad); z-index: 2;
+  display: flex; justify-content: space-between; align-items: center; gap: 16px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px; color: var(--fg-dimmer); letter-spacing: 0.06em;
+}
+.hero-meta .dot {
+  display: inline-block; width: 6px; height: 6px;
+  background: var(--accent); border-radius: 50%; margin-right: 8px;
+  vertical-align: middle; box-shadow: 0 0 12px var(--accent);
+  animation: pulse 2.4s ease-in-out infinite;
+}
+@keyframes pulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
+
+/* Capability cards */
+.cap-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--rule); border: 1px solid var(--rule); }
+.cap-card {
+  background: var(--bg); padding: clamp(28px, 3vw, 40px);
+  display: flex; flex-direction: column; gap: 16px;
+  min-height: 280px; transition: background 200ms;
+}
+.cap-card:hover { background: color-mix(in oklab, var(--bg) 90%, var(--accent) 4%); }
+.cap-card .label { color: var(--accent); }
+.cap-card h3 { font-size: 22px; font-weight: 500; letter-spacing: -0.02em; line-height: 1.2; }
+.cap-card p { color: var(--fg-dim); font-size: 15px; line-height: 1.55; }
+.cap-card .num { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 11px; color: var(--fg-dimmer); letter-spacing: 0.1em; margin-top: auto; }
+@media (max-width: 860px) { .cap-grid { grid-template-columns: 1fr; } .cap-card { min-height: 0; } }
+
+/* AppFactory centrepiece */
+.appfactory {
+  background: var(--bg-2);
+  border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule);
+  padding: clamp(80px, 14vh, 160px) 0; position: relative; overflow: hidden;
+}
+.appfactory-grid { display: grid; grid-template-columns: 1fr 1.1fr; gap: clamp(40px, 6vw, 80px); align-items: center; }
+@media (max-width: 960px) { .appfactory-grid { grid-template-columns: 1fr; } }
+.appfactory h2 { font-size: clamp(40px, 6vw, 72px); font-weight: 500; letter-spacing: -0.04em; line-height: 0.96; margin: 16px 0 28px; }
+.appfactory p { color: var(--fg-dim); font-size: clamp(15px, 1.3vw, 17px); line-height: 1.6; margin-bottom: 16px; max-width: 56ch; }
+.appfactory p strong { color: var(--fg); font-weight: 500; }
+.appfactory-link {
+  display: inline-flex; align-items: center; gap: 12px; margin-top: 24px;
+  font-size: 14px; letter-spacing: 0.02em; color: var(--accent);
+  padding: 14px 0; border-bottom: 1px solid color-mix(in oklab, var(--accent) 40%, transparent);
+  transition: gap 200ms, border-color 200ms;
+}
+.appfactory-link:hover { gap: 18px; border-bottom-color: var(--accent); }
+.appfactory-link .arrow { font-family: "JetBrains Mono", ui-monospace, monospace; }
+#appfactory-canvas { width: 100%; aspect-ratio: 4/3; background: var(--bg); border: 1px solid var(--rule); border-radius: 2px; position: relative; overflow: hidden; }
+
+/* Projects */
+.proj-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+@media (max-width: 960px) { .proj-grid { grid-template-columns: 1fr; } }
+.proj-card {
+  border: 1px solid var(--rule); padding: clamp(24px, 2.5vw, 32px);
+  display: flex; flex-direction: column; gap: 14px;
+  background: var(--bg); transition: border-color 200ms;
+  position: relative; min-height: 320px;
+}
+.proj-card:hover { border-color: color-mix(in oklab, var(--accent) 50%, var(--rule)); }
+.proj-card .proj-id { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 11px; color: var(--fg-dimmer); letter-spacing: 0.1em; }
+.proj-card h3 { font-size: 26px; font-weight: 500; letter-spacing: -0.02em; }
+.proj-card p { color: var(--fg-dim); font-size: 14px; line-height: 1.6; }
+.proj-card .proj-meta {
+  margin-top: auto; padding-top: 16px; border-top: 1px solid var(--rule);
+  display: flex; justify-content: space-between;
+  font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 11px;
+  color: var(--fg-dimmer); letter-spacing: 0.06em;
+}
+.proj-card .proj-meta .status { color: var(--accent); }
+
+/* Experience */
+.exp-list { display: flex; flex-direction: column; }
+.exp-row { display: grid; grid-template-columns: 200px 1fr; gap: clamp(20px, 4vw, 60px); padding: 32px 0; border-top: 1px solid var(--rule); align-items: start; }
+.exp-row:last-child { border-bottom: 1px solid var(--rule); }
+@media (max-width: 720px) { .exp-row { grid-template-columns: 1fr; gap: 12px; } }
+.exp-period { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 12px; color: var(--fg-dimmer); letter-spacing: 0.04em; padding-top: 6px; }
+.exp-title { font-size: 20px; font-weight: 500; letter-spacing: -0.015em; margin-bottom: 4px; }
+.exp-org { font-size: 14px; color: var(--accent); margin-bottom: 12px; }
+.exp-body { color: var(--fg-dim); font-size: 15px; line-height: 1.6; max-width: 70ch; }
+
+/* About */
+.about-grid { display: grid; grid-template-columns: 280px 1fr; gap: clamp(40px, 6vw, 80px); align-items: start; }
+@media (max-width: 860px) { .about-grid { grid-template-columns: 1fr; } }
+.about-aside { position: sticky; top: 120px; font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 12px; color: var(--fg-dimmer); letter-spacing: 0.04em; line-height: 1.8; }
+.about-aside dt { color: var(--fg-dim); }
+.about-aside dd { color: var(--fg); margin-bottom: 14px; }
+.about-body { font-size: 16px; line-height: 1.7; color: var(--fg-dim); max-width: 65ch; }
+.about-body p { margin-bottom: 20px; text-wrap: pretty; }
+.about-body p:first-child { font-size: 22px; line-height: 1.4; color: var(--fg); letter-spacing: -0.015em; margin-bottom: 36px; text-wrap: balance; }
+.about-body strong { color: var(--fg); font-weight: 500; }
+
+/* Contact */
+.contact-list {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px;
+  background: var(--rule);
+  border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule);
+  margin-top: 40px;
+}
+@media (max-width: 720px) { .contact-list { grid-template-columns: 1fr; } }
+.contact-item { background: var(--bg); padding: 36px 28px; display: flex; flex-direction: column; gap: 8px; transition: background 200ms; }
+.contact-item:hover { background: color-mix(in oklab, var(--bg) 88%, var(--accent) 6%); }
+.contact-item .label { color: var(--fg-dimmer); }
+.contact-item .value { font-size: clamp(15px, 1.4vw, 18px); letter-spacing: -0.01em; word-break: break-all; }
+.contact-item:hover .value { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<nav class="nav" id="nav">
+  <div class="nav-inner">
+    <a href="#top" class="nav-mark">geoff walker<span> // ai systems</span></a>
+    <div class="nav-links">
+      <a href="#build">What I build</a>
+      <a href="#appfactory">AppFactory</a>
+      <a href="#experience">Experience</a>
+      <a href="#about">About</a>
+      <a href="#contact">Contact</a>
+      <div class="pf-projects-wrap">
+        <button class="pf-projects-btn" aria-haspopup="true" aria-expanded="false">Projects <span class="pf-chevron" aria-hidden="true">▾</span></button>
+        <div class="pf-projects-drop">
+          <a href="/appfactory.html">AppFactory</a>
+          <a href="/familycookbook/">FamilyCookbook</a>
+          <a href="/pippa/">Pippa</a>
+          <a href="/tom/">Tom</a>
+        </div>
+      </div>
+    </div>
+    <button class="pf-burger" aria-label="Open menu" aria-expanded="false" aria-controls="pf-tray">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+  <div class="pf-tray" id="pf-tray">
+    <p class="pf-tray-label">On this page</p>
+    <a href="#build">What I build</a>
+    <a href="#appfactory">AppFactory</a>
+    <a href="#experience">Experience</a>
+    <a href="#about">About</a>
+    <a href="#contact">Contact</a>
+    <p class="pf-tray-label">Projects</p>
+    <a href="/appfactory.html">AppFactory</a>
+    <a href="/familycookbook/">FamilyCookbook</a>
+    <a href="/pippa/">Pippa</a>
+    <a href="/tom/">Tom</a>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <canvas id="hero-canvas" aria-hidden="true"></canvas>
+  <div class="container hero-grid">
+    <div class="hero-text">
+      <div class="hero-name">Geoff Walker</div>
+      <div class="hero-role">AI Systems Engineer</div>
+      <h1 class="hero-line">I design the constraints that make autonomous AI pipelines <em>safe to run.</em></h1>
+      <p class="hero-sub">Built fullstack systems in regulated pharma. Led the AI working group. Now I build the orchestration layer — the pipelines, the gates, the memory systems, the rules that keep autonomous agents on track.</p>
+    </div>
+    <div class="hero-portrait">
+      <img src="assets/portrait.png" alt="Low-poly geometric portrait of Geoff Walker" loading="eager">
+    </div>
+  </div>
+  <div class="hero-meta">
+    <span><span class="dot"></span>Lincolnshire / Remote</span>
+    <span>v.2026.04 — index</span>
+  </div>
+</header>
+
+<section class="section" id="build">
+  <div class="container">
+    <div class="section-head reveal"><span class="label">01 — What I build</span></div>
+    <div class="cap-grid reveal">
+      <article class="cap-card">
+        <div class="label">Agent pipeline design</div>
+        <h3>Multi-agent pipelines built around the failure modes.</h3>
+        <p>Routing, gates, budget caps, behavioural rules. The system knows what it's not allowed to do — not just the happy path.</p>
+        <div class="num">// 01</div>
+      </article>
+      <article class="cap-card">
+        <div class="label">AI in regulated environments</div>
+        <h3>GAMP 5 validated systems with full documentation trail.</h3>
+        <p>Led the AI working group in a GAMP 5 regulated pharma environment. Validated systems, full documentation trail. I know what it means to build AI that works inside compliance constraints — not just around them.</p>
+        <div class="num">// 02</div>
+      </article>
+      <article class="cap-card">
+        <div class="label">Full-stack delivery</div>
+        <h3>Frontend to infrastructure. End-to-end ownership.</h3>
+        <p>Angular, .NET, Python, Docker, Terraform, Azure. Not a specialist who hands off at the edge of their lane.</p>
+        <div class="num">// 03</div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="appfactory" id="appfactory">
+  <div class="container">
+    <div class="appfactory-grid">
+      <div class="reveal">
+        <span class="label">02 — Centrepiece</span>
+        <h2>AppFactory</h2>
+        <p>An <strong>autonomous multi-agent build pipeline.</strong> Specify a project. Walk away. Return to working software.</p>
+        <p>LangGraph orchestrates the agents. n8n handles the infrastructure. Archie — the Architect — sits at the centre, holds the context, and decides what the agents are and aren't allowed to do.</p>
+        <p><strong>This portfolio was built using AppFactory.</strong> That felt like the right way to demonstrate it.</p>
+        <a href="appfactory.html" class="appfactory-link">
+          <span>Explore AppFactory</span>
+          <span class="arrow">→</span>
+        </a>
+      </div>
+      <div id="appfactory-canvas" class="reveal" aria-hidden="true">
+        <canvas id="af-canvas" style="width:100%;height:100%;display:block;"></canvas>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="projects">
+  <div class="container">
+    <div class="section-head reveal"><span class="label">03 — Selected projects</span></div>
+    <div class="proj-grid reveal">
+      <a class="proj-card" href="familycookbook/">
+        <div class="proj-id">PRJ.001</div>
+        <h3>FamilyCookbook</h3>
+        <p>A recipe app with semantic search and AI image generation. Angular, .NET, PostgreSQL with pgvector. In production and in daily use.</p>
+        <p>The first project built through the multi-agent pipeline. AppFactory existed long before LangGraph — FamilyCookbook is what it produced.</p>
+        <div class="proj-meta">
+          <span class="status">● In production</span>
+          <span>Angular · .NET · pgvector</span>
+        </div>
+      </a>
+      <a class="proj-card" href="pippa/">
+        <div class="proj-id">PRJ.002</div>
+        <h3>Pippa</h3>
+        <p>An AI welfare adviser for the UK PIP disability assessment process. Delivered through Telegram. Domain knowledge injection, session continuity across gaps, safeguarding protocols.</p>
+        <p>Built from personal experience of the system.</p>
+        <div class="proj-meta">
+          <span class="status">● Live</span>
+          <span>Telegram · LLM · RAG</span>
+        </div>
+      </a>
+      <a class="proj-card" href="tom/">
+        <div class="proj-id">PRJ.003</div>
+        <h3>Tom</h3>
+        <p>An AI music teacher with longitudinal memory — daily check-ins, practice planning, a growing knowledge base. Can ingest and read sheet music as MusicXML.</p>
+        <p>Built on n8n, Claude API, mem0, and Qdrant. The memory layer is live. The web interface is in build.</p>
+        <div class="proj-meta">
+          <span class="status">● In build</span>
+          <span>n8n · Claude · Qdrant</span>
+        </div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="experience">
+  <div class="container">
+    <div class="section-head reveal"><span class="label">04 — Experience</span></div>
+    <div class="exp-list reveal">
+      <div class="exp-row">
+        <div class="exp-period">Sept 2025 — present</div>
+        <div>
+          <h3 class="exp-title">Systems Developer</h3>
+          <div class="exp-org">Tearfund</div>
+          <p class="exp-body">Full-stack development at one of the UK's leading international development and relief charities.</p>
+        </div>
+      </div>
+      <div class="exp-row">
+        <div class="exp-period">Sept 2023 — Sept 2025</div>
+        <div>
+          <h3 class="exp-title">Software Engineer</h3>
+          <div class="exp-org">Melior Solutions Ltd</div>
+          <p class="exp-body">Managed development delivery for EMVO — the European Medicines Verification Organisation — within a GAMP 5 regulated supply chain environment. Owned the full product lifecycle: roadmap, delivery, and full-stack implementation across Angular/Aurelia, .NET, Azure, Terraform, Azure Data Factory, CI/CD, and infrastructure. Managed and mentored a junior developer. Led the company AI working group. No narrow lane — from frontend to cloud infrastructure to regulated documentation.</p>
+        </div>
+      </div>
+      <div class="exp-row">
+        <div class="exp-period">Jun 2022 — Sept 2023</div>
+        <div>
+          <h3 class="exp-title">Software Developer</h3>
+          <div class="exp-org">CDA Appliances Ltd</div>
+          <p class="exp-body">Full-stack web development in PHP and JavaScript. Four commercial websites, SAP integration, ETL in SSIS. Broad commercial scope before moving into the .NET world.</p>
+        </div>
+      </div>
+      <div class="exp-row">
+        <div class="exp-period">2021 — 2022</div>
+        <div>
+          <h3 class="exp-title">Freelance Web Developer</h3>
+          <div class="exp-org">Independent</div>
+          <p class="exp-body">Responsive websites and volunteer management software. The self-taught pivot to development made commercial.</p>
+        </div>
+      </div>
+      <div class="exp-row">
+        <div class="exp-period">2000 — 2013</div>
+        <div>
+          <h3 class="exp-title">Prior career</h3>
+          <div class="exp-org">Engineering · Education · Sales</div>
+          <p class="exp-body">Production engineering, aerospace design, science teaching, engineering management, technical sales. Non-linear by circumstance, systems thinking throughout.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="about">
+  <div class="container">
+    <div class="section-head reveal"><span class="label">05 — About</span></div>
+    <div class="about-grid reveal">
+      <aside class="about-aside">
+        <dl>
+          <dt>// LOCATION</dt><dd>Lincolnshire, UK</dd>
+          <dt>// MODE</dt><dd>Remote</dd>
+<dt>// FOCUS</dt><dd>AI systems<br>Agent orchestration<br>Regulated environments</dd>
+        </dl>
+      </aside>
+      <div class="about-body">
+        <p>My career has never been linear — but there's always been a thread.</p>
+        <p>I started work at the tail end of the first digital revolution. Taking paper job sheets and turning them into full ERP systems in automotive supply chain. Building lab test software in Lotus Approach so nobody had to get up at 3am to run titrimetric analysis on the factory floor. Writing a full CRM in Access for the spares and components department because the data deserved a proper system. These were always my favourite parts of every job. It just never occurred to me that being a developer was a thing I could be — until it was the only option left.</p>
+        <p>In 2013 I fell out of a loft. The resulting infection took two years to run its course, collapsed the bone, and ended in an amputation. Recovery meant a part-time BI role at a local council — low-level work, the right pace. But reducing the medication that kept the pain manageable brought anxiety that made leaving the house impossible. I stopped working. For a while I thought that was it.</p>
+        <p>Then the pandemic happened. No commute required. Nowhere to be. I started teaching myself to code — and found my true calling. Not a pivot, not a reinvention. <strong>A recognition.</strong> I'd been doing this, in pieces, across twenty years of other jobs. It just took a global lockdown to make it the whole thing.</p>
+        <p>I'm based in Lincolnshire and work remotely. I'm a left-side Syme amputee with chronic pain conditions — remote is the environment where I do my best work. For the right role I can make occasional visits, but day-to-day I work from home, and in practice that's made me a better engineer: self-sufficient, strong written communicator, and I ship without anyone looking over my shoulder.</p>
+        <p>I'm excited to be here again. The same energy I felt watching job sheets become ERP systems — I feel it now watching prompts become pipelines. <strong>AppFactory is just the latest version of what I've always done: writing systems so I don't have to.</strong></p>
+        <p>The Pippa project exists because I've been through the PIP system myself. I know how hard it is. That's not background context — it's the brief.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="contact">
+  <div class="container">
+    <div class="section-head reveal">
+      <span class="label">06 — Contact</span>
+      <h2 class="section-title">Three links. No form.</h2>
+    </div>
+    <div class="contact-list reveal">
+      <a class="contact-item" href="mailto:geoffwalker@outlook.com">
+        <span class="label">// Email</span>
+        <span class="value mono">geoffwalker@outlook.com</span>
+      </a>
+      <a class="contact-item" href="https://linkedin.com/in/geoff-walker-a3ab02227" target="_blank" rel="noopener">
+        <span class="label">// LinkedIn</span>
+        <span class="value mono">linkedin.com/in/geoff-walker</span>
+      </a>
+      <a class="contact-item" href="https://github.com/Geoff-Walker" target="_blank" rel="noopener">
+        <span class="label">// GitHub</span>
+        <span class="value mono">github.com/Geoff-Walker</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <span>© 2026 Geoff Walker</span>
+    <span>Built with AppFactory</span>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script src="assets/shared.js"></script>
+<script src="assets/nav-controls.js"></script>
+<script>
+const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// HERO ANIMATION — abstract drifting threads + faint nodes
+(function heroAnim() {
+  const canvas = document.getElementById('hero-canvas');
+  if (!canvas || !window.THREE) return;
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 1000);
+  camera.position.z = 14;
+
+  function size() {
+    const w = canvas.clientWidth = canvas.parentElement.clientWidth;
+    const h = canvas.clientHeight = canvas.parentElement.clientHeight;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  }
+  size();
+  window.addEventListener('resize', size);
+
+  // Read accent dynamically
+  function getAccent() {
+    const v = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+    return new THREE.Color(v || '#60a5fa');
+  }
+  let accent = getAccent();
+  window.addEventListener('tweaks-changed', () => { accent = getAccent(); applyAccent(); });
+
+  const nodes = [];
+  const nodeCount = 26;
+  const nodeGeom = new THREE.SphereGeometry(0.06, 8, 8);
+  for (let i = 0; i < nodeCount; i++) {
+    const m = new THREE.Mesh(nodeGeom, new THREE.MeshBasicMaterial({ color: accent, transparent: true, opacity: 0.55 }));
+    m.position.set((Math.random()-0.5)*28, (Math.random()-0.5)*16, (Math.random()-0.5)*10 - 2);
+    m.userData = { phase: Math.random()*Math.PI*2, speed: 0.3 + Math.random()*0.5 };
+    scene.add(m); nodes.push(m);
+  }
+
+  const threads = [];
+  const threadGroup = new THREE.Group();
+  scene.add(threadGroup);
+  for (let i = 0; i < nodes.length; i++) {
+    for (let j = i+1; j < nodes.length; j++) {
+      const d = nodes[i].position.distanceTo(nodes[j].position);
+      if (d < 6 && Math.random() > 0.55) {
+        const g = new THREE.BufferGeometry().setFromPoints([nodes[i].position, nodes[j].position]);
+        const line = new THREE.Line(g, new THREE.LineBasicMaterial({ color: accent, transparent: true, opacity: 0.18 }));
+        threadGroup.add(line);
+        threads.push({ line, a: nodes[i], b: nodes[j] });
+      }
+    }
+  }
+
+  function applyAccent() {
+    nodes.forEach(n => n.material.color = accent);
+    threads.forEach(t => t.line.material.color = accent);
+  }
+
+  const moteGeom = new THREE.SphereGeometry(0.05, 6, 6);
+  const motes = [];
+  for (let i = 0; i < 8; i++) {
+    if (!threads.length) break;
+    const t = threads[Math.floor(Math.random()*threads.length)];
+    const m = new THREE.Mesh(moteGeom, new THREE.MeshBasicMaterial({ color: 0xf0f9ff, transparent: true, opacity: 0.9 }));
+    scene.add(m);
+    motes.push({ mesh: m, thread: t, t: Math.random(), speed: 0.0015 + Math.random()*0.002 });
+  }
+
+  let t0 = performance.now();
+  function frame(now) {
+    const speed = window.__animSpeed || 1;
+    const t = (now - t0) * 0.001 * speed;
+    nodes.forEach(n => {
+      const u = n.userData;
+      n.material.opacity = 0.3 + 0.35 * Math.sin(t * u.speed + u.phase);
+    });
+    motes.forEach(m => {
+      m.t += m.speed * speed;
+      if (m.t > 1) { m.t = 0; m.thread = threads[Math.floor(Math.random()*threads.length)]; }
+      m.mesh.position.lerpVectors(m.thread.a.position, m.thread.b.position, m.t);
+    });
+    camera.position.x = Math.sin(t*0.05) * 1.2;
+    camera.position.y = Math.cos(t*0.04) * 0.6;
+    camera.lookAt(0,0,0);
+    renderer.render(scene, camera);
+    if (!reduced) requestAnimationFrame(frame);
+  }
+  if (reduced) renderer.render(scene, camera); else requestAnimationFrame(frame);
+})();
+
+// APPFACTORY MINI-PREVIEW (pipeline animation)
+(function afPreview() {
+  const canvas = document.getElementById('af-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  function size() {
+    const dpr = Math.min(window.devicePixelRatio, 2);
+    const w = canvas.clientWidth = canvas.parentElement.clientWidth;
+    const h = canvas.clientHeight = canvas.parentElement.clientHeight;
+    canvas.width = w * dpr; canvas.height = h * dpr;
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  size();
+  window.addEventListener('resize', size);
+  const C = { bg:'#09090b', rule:'#1e293b', dim:'#475569', fg:'#f8fafc', amber:'#f59e0b', green:'#22c55e', gold:'#fbbf24' };
+  function getAccent() { return getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#60a5fa'; }
+
+  function layout() {
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    const cy = h * 0.62;
+    const left = w * 0.08, right = w * 0.92;
+    const xs = [left, left + (right-left)*0.22, left + (right-left)*0.42, left + (right-left)*0.66, left + (right-left)*0.85, right];
+    return {
+      w, h,
+      archie: { x: w*0.5, y: h*0.22 },
+      nodes: [
+        { x: xs[0], y: cy, label:'Design', kind:'agent' },
+        { x: xs[1], y: cy, label:'Gate',   kind:'gate' },
+        { x: xs[2], y: cy, label:'QA',     kind:'agent' },
+        { x: xs[3], y: cy, label:'Dev',    kind:'agent' },
+        { x: xs[4], y: cy, label:'Gate',   kind:'gate' },
+        { x: xs[5], y: cy, label:'End',    kind:'end' }
+      ]
+    };
+  }
+
+  const DUR = 12;
+  let start = performance.now();
+  let lastT = 0;
+  let elapsed = 0;
+
+  function nodeBox(x,y,w,h,active,kind) {
+    if (kind === 'gate') {
+      ctx.save(); ctx.translate(x,y); ctx.rotate(Math.PI/4);
+      ctx.fillStyle = C.bg; ctx.fillRect(-h/2,-h/2,h,h);
+      ctx.strokeStyle = active.color || C.rule; ctx.lineWidth = 1.5;
+      if (active.glow) { ctx.shadowColor = active.color; ctx.shadowBlur = 10; }
+      ctx.strokeRect(-h/2,-h/2,h,h); ctx.shadowBlur = 0; ctx.restore();
+    } else if (kind === 'end') {
+      ctx.beginPath(); ctx.arc(x,y,h/2,0,Math.PI*2);
+      ctx.fillStyle = C.bg; ctx.fill();
+      ctx.strokeStyle = active.color || C.rule; ctx.lineWidth = 1.5; ctx.stroke();
+    } else {
+      ctx.fillStyle = C.bg; ctx.fillRect(x-w/2,y-h/2,w,h);
+      ctx.strokeStyle = active.color || 'rgba(255,255,255,0.10)'; ctx.lineWidth = 1;
+      ctx.strokeRect(x-w/2,y-h/2,w,h);
+      if (active.glow) { ctx.shadowColor = active.color; ctx.shadowBlur = 12; ctx.strokeRect(x-w/2,y-h/2,w,h); ctx.shadowBlur = 0; }
+    }
+  }
+  function thread(x1,y1,x2,y2,color,opacity) {
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2);
+    ctx.strokeStyle = color; ctx.globalAlpha = opacity; ctx.lineWidth = 1; ctx.stroke(); ctx.globalAlpha = 1;
+  }
+  function packet(x,y) {
+    const grd = ctx.createRadialGradient(x,y,0,x,y,8);
+    grd.addColorStop(0,'#f0f9ff'); grd.addColorStop(1,'rgba(96,165,250,0)');
+    ctx.fillStyle = grd; ctx.fillRect(x-8,y-8,16,16);
+    ctx.fillStyle = '#f0f9ff'; ctx.beginPath(); ctx.arc(x,y,2.5,0,Math.PI*2); ctx.fill();
+  }
+  function lerp(a,b,t){return a+(b-a)*t;}
+
+  function frame(now) {
+    const speed = window.__animSpeed || 1;
+    if (!lastT) lastT = now;
+    elapsed += (now - lastT) * 0.001 * speed;
+    lastT = now;
+    if (elapsed > DUR) elapsed = 0;
+    const e = elapsed;
+    const A = getAccent();
+    const L = layout();
+    const w = L.w, h = L.h;
+    const NW = Math.min(w*0.13, 90), NH = 32;
+    ctx.clearRect(0,0,w,h);
+
+    const segs = [
+      { from: L.archie, to: L.nodes[0], t0:0.6, t1:1.6 },
+      { from: L.nodes[0], to: L.nodes[1], t0:2.6, t1:3.4 },
+      { from: L.nodes[1], to: L.nodes[2], t0:4.6, t1:5.4 },
+      { from: L.nodes[2], to: L.nodes[3], t0:6.4, t1:7.0 },
+      { from: L.nodes[3], to: L.nodes[4], t0:8.0, t1:8.6 },
+      { from: L.nodes[4], to: L.nodes[5], t0:9.6, t1:10.2 }
+    ];
+    const designActive  = e>=1.6 && e<2.6;
+    const gate1Amber    = e>=3.4 && e<4.3;
+    const gate1Green    = e>=4.3 && e<4.6;
+    const qaActive      = e>=5.4 && e<6.4;
+    const devActive     = e>=7.0 && e<8.0;
+    const gate2Amber    = e>=8.6 && e<9.4;
+    const gate2Green    = e>=9.4 && e<9.6;
+    const idle          = e>=10.2;
+    const archieActive  = e<0.8;
+
+    for (let i=0;i<L.nodes.length-1;i++) thread(L.nodes[i].x,L.nodes[i].y,L.nodes[i+1].x,L.nodes[i+1].y,C.rule,1);
+    thread(L.archie.x,L.archie.y,L.nodes[0].x,L.nodes[0].y,C.rule,1);
+
+    segs.forEach(s => {
+      if (e>=s.t0 && e<s.t1+0.4) {
+        const fade = e<s.t1?1:Math.max(0,1-(e-s.t1)/0.4);
+        thread(s.from.x,s.from.y,s.to.x,s.to.y,A,0.6*fade);
+      }
+    });
+
+    // Archie
+    const aw=70, ah=32;
+    ctx.fillStyle = C.bg; ctx.fillRect(L.archie.x-aw/2,L.archie.y-ah/2,aw,ah);
+    ctx.strokeStyle = C.gold; ctx.lineWidth = archieActive?1.5:1;
+    if (archieActive){ctx.shadowColor=C.gold;ctx.shadowBlur=12;}
+    ctx.strokeRect(L.archie.x-aw/2,L.archie.y-ah/2,aw,ah); ctx.shadowBlur=0;
+    ctx.fillStyle = C.fg; ctx.font='11px "Geist",sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('Archie', L.archie.x, L.archie.y);
+    ctx.fillStyle = C.dim; ctx.font='9px "JetBrains Mono",monospace';
+    ctx.fillText('ARCHITECT', L.archie.x, L.archie.y+ah/2+12);
+
+    function drawNode(node, opts) {
+      let color, glow=false;
+      if (node.kind==='gate') { color = opts.green?C.green:(opts.amber?C.amber:C.rule); glow = opts.amber||opts.green; }
+      else if (node.kind==='end') { color = idle?A:C.rule; glow = idle; }
+      else { color = (opts.active||idle)?A:'rgba(255,255,255,0.10)'; glow = opts.active||idle; }
+      nodeBox(node.x,node.y,NW,NH,{color,glow},node.kind);
+      ctx.fillStyle = (opts.active||opts.amber||opts.green||idle)?C.fg:C.dim;
+      ctx.font='11px "Geist",sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(node.label, node.x, node.y);
+    }
+    drawNode(L.nodes[0], { active: designActive });
+    drawNode(L.nodes[1], { amber: gate1Amber, green: gate1Green });
+    drawNode(L.nodes[2], { active: qaActive });
+    drawNode(L.nodes[3], { active: devActive });
+    drawNode(L.nodes[4], { amber: gate2Amber, green: gate2Green });
+    drawNode(L.nodes[5], {});
+
+    segs.forEach(s => {
+      if (e>=s.t0 && e<s.t1) {
+        const t = (e-s.t0)/(s.t1-s.t0);
+        packet(lerp(s.from.x,s.to.x,t), lerp(s.from.y,s.to.y,t));
+      }
+    });
+    if (idle) {
+      const fade = Math.min(1,(e-10.2)/0.6);
+      ctx.fillStyle = `rgba(100,116,139,${fade})`;
+      ctx.font='11px "JetBrains Mono",monospace'; ctx.textAlign='center';
+      ctx.fillText('A project spec goes in. Working software comes out.', w/2, h-22);
+    }
+
+    if (!reduced) requestAnimationFrame(frame);
+  }
+  if (reduced) { elapsed = 11; lastT = performance.now(); frame(performance.now()); }
+  else requestAnimationFrame(frame);
+})();
+</script>
+
+<div class="archie-panel" role="dialog" aria-label="Chat with Archie">
+  <div class="archie-panel-head">
+    <span class="ap-mark">A</span>
+    <span>Archie</span>
+    <span class="ap-status">online</span>
+  </div>
+  <div class="archie-panel-body"></div>
+  <form class="archie-panel-foot">
+    <input type="text" placeholder="Ask about Geoff's work…" autocomplete="off" aria-label="Your message">
+    <button type="submit">Send</button>
+  </form>
+</div>
+<div class="archie-fab">
+  <button class="archie-fab-btn" aria-label="Chat with Archie" aria-expanded="false">A</button>
+</div>
+<script src="assets/archie-chat.js"></script>
+</body>
+</html>

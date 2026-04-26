@@ -1,0 +1,99 @@
+/* Portfolio nav — shared across project pages.
+   Uses hardcoded dark values; no dependency on page CSS variables. */
+
+.pf-nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(9, 9, 11, 0.88);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid transparent;
+  transition: border-color 200ms;
+}
+.pf-nav.scrolled { border-bottom-color: #1e293b; }
+
+.pf-nav-inner {
+  max-width: 1280px; margin: 0 auto;
+  padding: 14px 32px;
+  display: flex; align-items: center; justify-content: space-between; gap: 24px;
+}
+@media (max-width: 720px) { .pf-nav-inner { padding: 14px 20px; } }
+
+.pf-nav-mark {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 13px; letter-spacing: 0.04em;
+  color: #f8fafc; text-decoration: none; white-space: nowrap;
+}
+.pf-nav-mark span { color: #475569; }
+
+.pf-nav-links { display: flex; gap: 28px; font-size: 13px; }
+.pf-nav-links a { color: #94a3b8; text-decoration: none; transition: color 150ms; white-space: nowrap; }
+.pf-nav-links a:hover { color: #f8fafc; }
+
+@media (max-width: 720px) { .pf-nav-links { display: none; } }
+
+/* ── Projects dropdown (desktop) ── */
+.pf-projects-wrap { position: relative; }
+.pf-projects-btn {
+  background: none; border: none; cursor: pointer; padding: 0;
+  font-family: inherit; font-size: 13px; color: #94a3b8;
+  display: inline-flex; align-items: center; gap: 5px;
+  transition: color 150ms; white-space: nowrap;
+}
+.pf-projects-btn:hover,
+.pf-projects-btn[aria-expanded="true"] { color: #f8fafc; }
+.pf-chevron { display: inline-block; font-size: 9px; transition: transform 200ms; line-height: 1; }
+.pf-projects-btn[aria-expanded="true"] .pf-chevron { transform: rotate(180deg); }
+
+.pf-projects-drop {
+  position: absolute; top: calc(100% + 10px); right: 0;
+  min-width: 156px; background: #0f172a;
+  border: 1px solid #1e293b; border-radius: 8px; padding: 4px;
+  opacity: 0; transform: translateY(-4px); pointer-events: none;
+  transition: opacity 150ms, transform 150ms; z-index: 10;
+}
+.pf-projects-btn[aria-expanded="true"] + .pf-projects-drop {
+  opacity: 1; transform: translateY(0); pointer-events: auto;
+}
+.pf-projects-drop a {
+  display: block; padding: 8px 12px; border-radius: 5px; font-size: 13px;
+  color: #94a3b8; text-decoration: none;
+  transition: background 100ms, color 100ms;
+}
+.pf-projects-drop a:hover { background: #1e293b; color: #f8fafc; }
+
+/* ── Burger (mobile only) ── */
+.pf-burger {
+  display: none;
+  background: none; border: none; cursor: pointer; padding: 6px;
+  flex-direction: column; align-items: flex-end; gap: 5px;
+}
+.pf-burger span {
+  display: block; height: 1.5px; background: #94a3b8;
+  transition: transform 220ms, opacity 180ms, width 180ms;
+}
+.pf-burger span:nth-child(1) { width: 20px; }
+.pf-burger span:nth-child(2) { width: 13px; }
+.pf-burger span:nth-child(3) { width: 20px; }
+.pf-burger[aria-expanded="true"] span:nth-child(1) { transform: translateY(6.5px) rotate(45deg); width: 20px; }
+.pf-burger[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+.pf-burger[aria-expanded="true"] span:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); width: 20px; }
+@media (max-width: 720px) { .pf-burger { display: flex; } }
+
+/* ── Mobile tray ── */
+.pf-tray {
+  display: none; flex-direction: column;
+  padding: 4px 20px 14px;
+  border-top: 1px solid #1e293b;
+}
+.pf-tray.open { display: flex; }
+.pf-tray-label {
+  font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: #334155; margin: 12px 0 4px; padding: 0;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
+.pf-tray a {
+  color: #64748b; text-decoration: none; font-size: 14px;
+  padding: 9px 0; border-bottom: 1px solid #1e293b;
+  transition: color 120ms;
+}
+.pf-tray a:last-child { border-bottom: none; }
+.pf-tray a:hover { color: #f8fafc; }

@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tom · Teacher of Music</title>
+<meta name="description" content="An AI music teacher who has ears. A portfolio piece by Geoff Walker." />
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,300..700,30..100,0..1;1,9..144,300..700,30..100,0..1&family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&family=Playfair+Display:ital,wght@0,400..700;1,400..700&family=Literata:ital,opsz,wght@0,7..72,300..700;1,7..72,300..700&family=Yeseva+One&family=Lora:ital,wght@0,400..700;1,400..700&family=PT+Serif:ital,wght@0,400;0,700;1,400;1,700&family=PT+Serif+Caption:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+<link rel="stylesheet" href="styles.css?v=2" />
+<link rel="stylesheet" href="/assets/portfolio-nav.css" />
+<link rel="stylesheet" href="/assets/archie-chat.css" />
+<style>
+  /* Tom nav — light editorial, matches page canvas */
+  .pf-nav {
+    background: rgba(255, 255, 255, 0.94);
+    border-bottom: 1px solid transparent;
+  }
+  .pf-nav.scrolled {
+    border-bottom-color: #E6E2DC;
+    box-shadow: 0 1px 8px rgba(26, 26, 26, 0.07);
+  }
+  .pf-nav-mark {
+    font-family: "Fraunces", "Freight Big Pro", Georgia, serif;
+    font-style: italic;
+    font-weight: 500;
+    font-size: 15px;
+    letter-spacing: -0.01em;
+    color: #1A1A1A;
+  }
+  .pf-nav-mark span {
+    font-family: "Source Serif 4", "Source Serif Pro", Georgia, serif;
+    font-style: normal;
+    font-size: 12px;
+    letter-spacing: 0.02em;
+    color: #7a7a7a;
+  }
+  .pf-nav-links a {
+    font-family: "Source Serif 4", "Source Serif Pro", Georgia, serif;
+    color: #7a7a7a;
+    font-size: 14px;
+  }
+  .pf-nav-links a:hover { color: #1A1A1A; }
+  /* Tom dropdown + tray — light editorial */
+  .pf-projects-btn {
+    color: #7a7a7a;
+    font-family: "Source Serif 4", Georgia, serif;
+    font-size: 14px;
+  }
+  .pf-projects-btn:hover,
+  .pf-projects-btn[aria-expanded="true"] { color: #1A1A1A; }
+  .pf-projects-drop {
+    background: #FFFFFF;
+    border-color: #E6E2DC;
+    box-shadow: 0 4px 16px rgba(26,26,26,0.10);
+  }
+  .pf-projects-drop a { color: #4a4a4a; }
+  .pf-projects-drop a:hover { background: #F1ECE4; color: #1A1A1A; }
+  .pf-burger span { background: #7a7a7a; }
+  .pf-tray {
+    background: rgba(255,255,255,0.98);
+    border-top-color: #E6E2DC;
+  }
+  .pf-tray-label {
+    color: #bbb;
+    font-family: "Source Serif 4", Georgia, serif;
+    letter-spacing: 0.05em;
+  }
+  .pf-tray a {
+    color: #4a4a4a;
+    border-bottom-color: #E6E2DC;
+    font-family: "Source Serif 4", Georgia, serif;
+  }
+  .pf-tray a:hover { color: #1A1A1A; }
+</style>
+
+<style>
+  /* Inline: paper-grain SVG noise (used by .arch-wrap) */
+  .arch-wrap {
+    --paper-grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.10  0 0 0 0 0.08  0 0 0 0 0.06  0 0 0 0.035 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+
+  /* Wheel SVG cosmetics (live in inline so wheel.js stays self-contained) */
+  .wheel-mode { font-family: var(--font-body); font-size: 11.5px; letter-spacing: 0.06em; fill: #1A1A1A; }
+  text.wheel-mode[data-role="key"] {
+    font-family: var(--font-display); font-style: italic; font-size: 16px; letter-spacing: -0.01em;
+  }
+  .wheel-quality { font-family: var(--font-display); font-size: 18px; font-weight: 500; fill: #1A1A1A; transition: opacity .4s ease; }
+  .wheel-primary-label { font-family: var(--font-display); font-size: 22px; font-weight: 500; fill: #1A1A1A; }
+  .wheel-keylabel { font-family: var(--font-display); font-style: italic; font-size: 18px; fill: #1A1A1A; letter-spacing: -0.005em; }
+  .ring-chords path[data-role="chord-cell"] {
+    transition: fill-opacity .55s cubic-bezier(.5,.05,.2,1);
+  }
+  .ring-chords path.active { fill-opacity: 0.85 !important; }
+
+  /* State marker dot mode */
+  .state[data-glyph="dot"] {
+    border: none !important; background: transparent !important; padding: 0 !important;
+    display: inline-flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-soft);
+  }
+  .state[data-glyph="dot"] .dot {
+    width: 10px; height: 10px; border-radius: 50%; display: inline-block;
+  }
+  .dot-live    { background: #00C000; }
+  .dot-partial { background: #CD7F32; }
+  .dot-arch    { background: transparent; border: 1.5px solid #B7B7B7; }
+  .state[data-glyph="glyph"] {
+    border: none !important; background: transparent !important; padding: 0 !important;
+    font-size: 18px; color: var(--ink-soft);
+  }
+  .vh { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
+</style>
+</head>
+<body>
+
+<nav class="pf-nav" id="pf-nav">
+  <div class="pf-nav-inner">
+    <a href="/" class="pf-nav-mark">geoff walker<span> // ai systems</span></a>
+    <div class="pf-nav-links">
+      <a href="#today-h">Today</a>
+      <a href="#tomorrow-h">Tomorrow</a>
+      <a href="#arch-h">Memory</a>
+      <a href="#diff-h">Feedback</a>
+      <div class="pf-projects-wrap">
+        <button class="pf-projects-btn" aria-haspopup="true" aria-expanded="false">Projects <span class="pf-chevron" aria-hidden="true">▾</span></button>
+        <div class="pf-projects-drop">
+          <a href="/appfactory.html">AppFactory</a>
+          <a href="/familycookbook/">FamilyCookbook</a>
+          <a href="/pippa/">Pippa</a>
+          <a href="/tom/">Tom</a>
+        </div>
+      </div>
+    </div>
+    <button class="pf-burger" aria-label="Open menu" aria-expanded="false" aria-controls="pf-tray">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+  <div class="pf-tray" id="pf-tray">
+    <p class="pf-tray-label">On this page</p>
+    <a href="#today-h">Today</a>
+    <a href="#tomorrow-h">Tomorrow</a>
+    <a href="#arch-h">Memory</a>
+    <a href="#diff-h">Feedback</a>
+    <p class="pf-tray-label">Projects</p>
+    <a href="/appfactory.html">AppFactory</a>
+    <a href="/familycookbook/">FamilyCookbook</a>
+    <a href="/pippa/">Pippa</a>
+    <a href="/tom/">Tom</a>
+  </div>
+</nav>
+
+<!-- ===== Hero ===== -->
+<section class="hero" aria-labelledby="hero-h1">
+  <div class="hero-copy">
+    <p class="eyebrow">Portfolio · An AI music teacher</p>
+    <h1 id="hero-h1">
+      <span class="line line-1">Tom.</span>
+      <span class="line line-2">Teacher of Music.</span>
+      <span class="line line-3">An AI music teacher who has ears.</span>
+    </h1>
+    <p class="hero-lede">
+      I had a practice tool that listened to me play — highlighted where the timing
+      drifted, where a note was wrong, where I was getting stronger. When it was
+      removed, so was my progression. I wanted a teacher who could see my score,
+      hear me play, and know me well enough to push where I was ready and back off
+      where I wasn't. No product does this. So I'm building one.
+    </p>
+  </div>
+
+  <div class="hero-visual" aria-label="Animated circle of fifths showing keys, modes and chord families">
+    <svg id="wheel" xmlns="http://www.w3.org/2000/svg"></svg>
+  </div>
+</section>
+
+<!-- ===== Section 2 — Tom today ===== -->
+<section class="section" aria-labelledby="today-h">
+  <div class="section-inner">
+    <header class="section-head">
+      <p class="section-num">§ Two — Today</p>
+      <h2 class="section-title" id="today-h">Tom <em>today</em></h2>
+    </header>
+
+    <p class="section-opener">Tom is running. <em>I talk to him every day.</em></p>
+
+    <div class="beat">
+      <p class="beat-marker">Beat 01</p>
+      <div class="beat-body">
+        <p>
+          <strong class="lede">Tom reads the manual so I don't have to.</strong>
+          My Roland Fantom 08 keyboard ships with 190 pages of reference documentation
+          and 354 figures — switches, parameters, patch diagrams, MIDI tables. I ingested
+          the whole manual into Tom's knowledge base: chunked by heading, images
+          captioned by GPT-4o-mini in line with the text they belong to. Now when I need
+          to know how the split point works or which patch is the Rhodes, Tom tells me —
+          citing the page and showing the figure.
+        </p>
+        <p>
+          The pattern is general: ingest a vendor's technical documentation, emit an
+          expert assistant for the product's user. It applies to any domain where the
+          knowledge lives in dense, illustrated documents people don't read.
+        </p>
+      </div>
+    </div>
+
+    <div class="beat">
+      <p class="beat-marker">Beat 02</p>
+      <div class="beat-body">
+        <p>
+          <strong class="lede">Tom lives across surfaces.</strong>
+          Telegram for daily check-ins and quick exchanges; Claude Desktop for longer
+          teaching conversations. Both surfaces share the same memory — when I mention a
+          piece in Telegram on Monday, Tom knows about it in Claude Desktop on Sunday.
+          Every incoming message is classified — coach mode for practice check-ins,
+          teacher mode for deeper reasoning — and routed to the right model. Haiku is
+          cheap and responsive; Sonnet is expensive and thoughtful. The right one picks
+          the message up automatically.
+        </p>
+      </div>
+    </div>
+
+    <!-- Architecture diagram -->
+    <figure class="arch-wrap" id="arch-h" aria-labelledby="arch-cap">
+      <svg class="arch-svg" viewBox="0 0 1080 560" role="img" aria-labelledby="arch-cap arch-desc">
+        <title id="arch-cap-svg">Tom system architecture</title>
+        <desc id="arch-desc">
+          Telegram messages flow into a central classifier-and-router that picks between a
+          Coach model (Haiku) for quick exchanges and a Teacher model (Sonnet) for deeper
+          reasoning. Claude Desktop bypasses the classifier and reads and writes directly
+          to Tom's services through MCP servers; a future practice app will follow the
+          same MCP route. On the right are three memory stores: episodic memory in green,
+          structured state in blue, and reference knowledge in bronze — all reachable from
+          both the classified path and the MCP path. Below, an ingestion pipeline takes
+          source documents through captioning and chunking into the reference store.
+        </desc>
+
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#1A1A1A"/>
+          </marker>
+          <marker id="arr-soft" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#7a7a7a"/>
+          </marker>
+        </defs>
+
+        <!-- LEFT: surfaces -->
+        <g class="surfaces" font-family="Source Serif 4, serif">
+          <text x="60" y="38" font-size="11" letter-spacing="2.4" fill="#7a7a7a">SURFACES</text>
+
+          <g transform="translate(60, 70)">
+            <rect width="180" height="62" fill="#fff" stroke="#1A1A1A" stroke-width="1.2" rx="2"/>
+            <text x="20" y="28" font-size="15" font-weight="600" fill="#1A1A1A">Telegram</text>
+            <text x="20" y="48" font-size="12" fill="#7a7a7a">daily check-ins</text>
+          </g>
+          <g transform="translate(60, 160)">
+            <rect width="180" height="62" fill="#fff" stroke="#1A1A1A" stroke-width="1.2" rx="2"/>
+            <text x="20" y="28" font-size="15" font-weight="600" fill="#1A1A1A">Claude Desktop</text>
+            <text x="20" y="48" font-size="12" fill="#7a7a7a">long-form teaching</text>
+          </g>
+          <g transform="translate(60, 250)">
+            <rect width="180" height="62" fill="#fff" stroke="#B7B7B7" stroke-width="1" stroke-dasharray="4 4" rx="2"/>
+            <text x="20" y="28" font-size="15" font-weight="500" fill="#9a9a9a" font-style="italic">Practice App</text>
+            <text x="20" y="48" font-size="12" fill="#B7B7B7">future</text>
+          </g>
+
+          <!-- Telegram → classifier (classified path through the agent) -->
+          <path d="M 240 101 C 320 101, 370 180, 410 220" stroke="#1A1A1A" stroke-width="1.4" fill="none" marker-end="url(#arr)"/>
+          <text x="258" y="92" font-size="10" letter-spacing="0.14em" fill="#7a7a7a" font-style="italic">classified</text>
+
+          <!-- Claude Desktop → directly into the shared memory/plan/reference panel inside the agent (via MCP) -->
+          <path d="M 240 191 L 320 191 L 320 320 L 410 320"
+                stroke="#1A1A1A" stroke-width="1.2" fill="none" marker-end="url(#arr)"/>
+          <text x="328" y="312" font-size="10" letter-spacing="0.14em" fill="#7a7a7a" font-style="italic">direct via MCP</text>
+
+          <!-- Future Practice App → same panel, dashed -->
+          <path d="M 240 281 L 300 281 L 300 332 L 410 332"
+                stroke="#9a9a9a" stroke-width="1" stroke-dasharray="3 3" fill="none" marker-end="url(#arr-soft)"/>
+        </g>
+
+        <!-- CENTER: agent -->
+        <g transform="translate(410, 130)" font-family="Source Serif 4, serif">
+          <text x="0" y="-20" font-size="11" letter-spacing="2.4" fill="#7a7a7a">AGENT</text>
+          <rect width="240" height="220" fill="#fff" stroke="#1A1A1A" stroke-width="1.4" rx="2"/>
+          <text x="120" y="28" text-anchor="middle" font-size="14" font-weight="600" fill="#1A1A1A">Classifier</text>
+          <text x="120" y="46" text-anchor="middle" font-size="11.5" fill="#7a7a7a" font-style="italic">routes each message</text>
+
+          <line x1="20" y1="64" x2="220" y2="64" stroke="#E6E2DC"/>
+
+          <!-- Coach -->
+          <g transform="translate(20, 80)">
+            <rect width="95" height="66" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="0.9" rx="2"/>
+            <text x="10" y="22" font-size="13" font-weight="600" fill="#1A1A1A">Coach</text>
+            <text x="10" y="40" font-size="11.5" fill="#7a7a7a">Haiku</text>
+            <text x="10" y="56" font-size="10" fill="#9a9a9a" font-style="italic">cheap · fast</text>
+          </g>
+          <!-- Teacher -->
+          <g transform="translate(125, 80)">
+            <rect width="95" height="66" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="0.9" rx="2"/>
+            <text x="10" y="22" font-size="13" font-weight="600" fill="#1A1A1A">Teacher</text>
+            <text x="10" y="40" font-size="11.5" fill="#7a7a7a">Sonnet</text>
+            <text x="10" y="56" font-size="10" fill="#9a9a9a" font-style="italic">deep · thoughtful</text>
+          </g>
+
+          <line x1="20" y1="160" x2="220" y2="160" stroke="#E6E2DC"/>
+          <!-- Shared memory/plan/reference panel — read & written by both the classified path and direct MCP -->
+          <g transform="translate(20, 172)">
+            <rect width="200" height="36" fill="#FDFCFA" stroke="#1A1A1A" stroke-width="1" rx="2"/>
+            <text x="100" y="16" text-anchor="middle" font-size="12.5" font-weight="600" fill="#1A1A1A">memory · plan · reference</text>
+            <text x="100" y="30" text-anchor="middle" font-size="10" fill="#7a7a7a" font-style="italic">shared by every surface</text>
+          </g>
+        </g>
+
+        <!-- RIGHT: memory stores -->
+        <g font-family="Source Serif 4, serif">
+          <text x="800" y="38" font-size="11" letter-spacing="2.4" fill="#7a7a7a">MEMORY</text>
+
+          <g transform="translate(800, 70)">
+            <rect width="200" height="62" fill="#fff" stroke="#1A1A1A" stroke-width="1.2" rx="2"/>
+            <rect x="0" y="0" width="6" height="62" fill="#00C000"/>
+            <text x="20" y="28" font-size="15" font-weight="600" fill="#1A1A1A">Episodic</text>
+            <text x="20" y="48" font-size="11.5" fill="#7a7a7a">mem0 · semantic</text>
+          </g>
+          <g transform="translate(800, 160)">
+            <rect width="200" height="62" fill="#fff" stroke="#1A1A1A" stroke-width="1.2" rx="2"/>
+            <rect x="0" y="0" width="6" height="62" fill="#0066FF"/>
+            <text x="20" y="28" font-size="15" font-weight="600" fill="#1A1A1A">Structured state</text>
+            <text x="20" y="48" font-size="11.5" fill="#7a7a7a">JSON in Qdrant</text>
+          </g>
+          <g transform="translate(800, 250)">
+            <rect width="200" height="62" fill="#fff" stroke="#1A1A1A" stroke-width="1.2" rx="2"/>
+            <rect x="0" y="0" width="6" height="62" fill="#CD7F32"/>
+            <text x="20" y="28" font-size="15" font-weight="600" fill="#1A1A1A">Reference</text>
+            <text x="20" y="48" font-size="11.5" fill="#7a7a7a">FANTOM manual · vector</text>
+          </g>
+
+          <!-- arrows from agent panel right edge → memory stores.
+               Origins are spread evenly along the right edge (x=650) at y=180, 240, 300
+               so connectors fan out cleanly to Episodic (y=101), Structured (y=191), Reference (y=281). -->
+          <path d="M 650 180 C 710 180, 740 110, 800 101" stroke="#1A1A1A" stroke-width="1.1" fill="none" marker-end="url(#arr)"/>
+          <path d="M 650 240 L 800 191" stroke="#1A1A1A" stroke-width="1.1" fill="none" marker-end="url(#arr)"/>
+          <path d="M 650 300 C 710 300, 740 285, 800 281" stroke="#1A1A1A" stroke-width="1.1" fill="none" marker-end="url(#arr)"/>
+        </g>
+
+        <!-- BOTTOM: ingestion pipeline → reference -->
+        <g transform="translate(60, 430)" font-family="Source Serif 4, serif">
+          <text x="0" y="0" font-size="11" letter-spacing="2.4" fill="#7a7a7a">INGESTION</text>
+          <g transform="translate(0, 14)">
+            <rect width="140" height="46" fill="#fff" stroke="#1A1A1A" stroke-width="0.9" rx="2"/>
+            <text x="70" y="20" text-anchor="middle" font-size="12" font-weight="600" fill="#1A1A1A">Source docs</text>
+            <text x="70" y="36" text-anchor="middle" font-size="10.5" fill="#7a7a7a">PDF, 190 pages</text>
+          </g>
+          <path d="M 140 37 L 178 37" stroke="#1A1A1A" stroke-width="1" marker-end="url(#arr)"/>
+          <g transform="translate(180, 14)">
+            <rect width="150" height="46" fill="#fff" stroke="#1A1A1A" stroke-width="0.9" rx="2"/>
+            <text x="75" y="20" text-anchor="middle" font-size="12" font-weight="600" fill="#1A1A1A">Caption images</text>
+            <text x="75" y="36" text-anchor="middle" font-size="10.5" fill="#7a7a7a">GPT-4o-mini</text>
+          </g>
+          <path d="M 330 37 L 368 37" stroke="#1A1A1A" stroke-width="1" marker-end="url(#arr)"/>
+          <g transform="translate(370, 14)">
+            <rect width="140" height="46" fill="#fff" stroke="#1A1A1A" stroke-width="0.9" rx="2"/>
+            <text x="70" y="20" text-anchor="middle" font-size="12" font-weight="600" fill="#1A1A1A">Chunk by heading</text>
+            <text x="70" y="36" text-anchor="middle" font-size="10.5" fill="#7a7a7a">+ inline figures</text>
+          </g>
+          <path d="M 510 37 L 548 37" stroke="#1A1A1A" stroke-width="1" marker-end="url(#arr)"/>
+          <g transform="translate(550, 14)">
+            <rect width="140" height="46" fill="#fff" stroke="#1A1A1A" stroke-width="0.9" rx="2"/>
+            <text x="70" y="20" text-anchor="middle" font-size="12" font-weight="600" fill="#1A1A1A">Embed → Qdrant</text>
+            <text x="70" y="36" text-anchor="middle" font-size="10.5" fill="#7a7a7a">vector store</text>
+          </g>
+          <!-- Curve up to Reference store: rises from top of "Embed → Qdrant" box,
+               travels up-and-right over the MCP lane, lands on Reference store's bottom edge.
+               In local coords (group is translate(60, 430)): start (620, 14) → end (840, -118)
+               which is absolute (900, 312) — the bottom of the Reference store. -->
+          <path d="M 620 14
+                   C 720 -40, 820 -40, 840 -118"
+                stroke="#CD7F32" stroke-width="1.4" fill="none" marker-end="url(#arr)"/>
+        </g>
+
+      </svg>
+      <figcaption class="arch-caption" id="arch-cap">
+        Telegram routes through the classifier; Claude Desktop reaches the same memory directly via MCP servers. Two paths, one shared memory.
+      </figcaption>
+    </figure>
+
+    <div class="beat">
+      <p class="beat-marker">Beat 03</p>
+      <div class="beat-body">
+        <p>
+          <strong class="lede">Memory is not one store.</strong>
+          Conversations and observations ("triplets now solid at 230bpm") are episodic —
+          they live in mem0, semantically searchable. The weekly plan and the daily
+          check-in state machine are structured — JSON in Qdrant with deterministic reads
+          and writes, because "did I log my guitar session yet today" isn't a semantic
+          question. The FANTOM reference material is its own vector collection. Three
+          stores, each chosen for what the data actually is.
+        </p>
+      </div>
+    </div>
+
+    <p class="section-close">
+      Tom runs daily. Adapts to my actual pieces — <em>Paradise</em>, <em>For Whom The
+      Bell Tolls</em>, <em>Slow Dancing in a Burning Room</em>. Total cost to run: about
+      £0.70 a month.
+    </p>
+  </div>
+</section>
+
+<!-- ===== Section 3 — Tom tomorrow ===== -->
+<section class="section" aria-labelledby="tomorrow-h">
+  <div class="section-inner">
+    <header class="section-head">
+      <p class="section-num">§ Three — Tomorrow</p>
+      <h2 class="section-title" id="tomorrow-h">Tom <em>tomorrow</em></h2>
+    </header>
+
+    <p class="section-opener">
+      What Tom is today is a foundation. What he becomes is a teacher who can see the
+      score, hear the performance, and <em>close the loop between the two.</em>
+    </p>
+
+    <div class="beat">
+      <p class="beat-marker">AppFactory</p>
+      <div class="beat-body">
+        <p>
+          This is a large build — larger than I would attempt alone. <strong class="lede"><a href="/appfactory.html" style="color:inherit;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px;">AppFactory</a>
+          is what makes it feasible</strong> — the agent-system that turns architecture
+          decisions into shipped software. Tom is the first real demonstration of what
+          one engineer can build with AppFactory behind them.
+        </p>
+      </div>
+    </div>
+
+    <div class="beat">
+      <p class="beat-marker">The stack</p>
+      <div class="beat-body">
+        <p class="stack-intro">
+          <em>Six modalities cohering through one teacher.</em>
+        </p>
+        <ul class="stack" aria-label="Multimodal capability stack">
+          <li class="m-text">
+            <span class="modality"><span class="glyph" aria-hidden="true"></span>Text</span>
+            <span class="desc">Conversations across Telegram and Claude Desktop, memory that persists.</span>
+            <span class="state live" data-kind="live">Live today</span>
+          </li>
+          <li class="m-vision">
+            <span class="modality"><span class="glyph" aria-hidden="true"></span>Vision</span>
+            <span class="desc">Captioned manual imagery inside Tom's knowledge base.</span>
+            <span class="state live" data-kind="live">Live today</span>
+          </li>
+          <li class="m-time">
+            <span class="modality"><span class="glyph" aria-hidden="true"></span>Time-series</span>
+            <span class="desc">Session logs, BPM progression, a model of how I actually improve over time.</span>
+            <span class="state live" data-kind="live">Live today</span>
+          </li>
+          <li class="m-score">
+            <span class="modality"><span class="glyph" aria-hidden="true"></span>Structured score</span>
+            <span class="desc">MusicXML ingested from Rockschool PDFs via OMR, rendered in-browser with OpenSheetMusicDisplay.</span>
+            <span class="state partial" data-kind="partial">Partially live</span>
+          </li>
+          <li class="m-midi">
+            <span class="modality"><span class="glyph" aria-hidden="true"></span>MIDI</span>
+            <span class="desc">Piano performance captured natively over USB, diffed against the canonical MIDI of the piece.</span>
+            <span class="state arch" data-kind="arch">Architected</span>
+          </li>
+          <li class="m-audio">
+            <span class="modality"><span class="glyph" aria-hidden="true"></span>Audio</span>
+            <span class="desc">Guitar recorded through the browser, pitch and timing extracted with basic-pitch and DTW.</span>
+            <span class="state arch" data-kind="arch">Architected</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="beat">
+      <p class="beat-marker">Asymmetry</p>
+      <div class="beat-body">
+        <p>
+          One subtle call: piano and guitar need different pipelines. Piano emits MIDI
+          natively — a clean, millisecond-accurate signal. Guitar emits audio through a
+          pickup — messier, polyphonic, needs inference. Same teacher, two capture paths.
+          The architecture mirrors the instruments rather than flattening them into one
+          pipeline.
+        </p>
+      </div>
+    </div>
+
+    <div class="beat">
+      <p class="beat-marker">Score-Match</p>
+      <div class="beat-body">
+        <p>
+          At the end of that pipeline: <strong class="lede">a score-aligned playback diff.</strong>
+          Record a take, compare it to the score, colour each note as I played it — green
+          correct, amber timing off, red wrong note, grey missed. The capability whose
+          removal ended my RSL journey — rebuilt, and this time it lives inside a teacher
+          who knows me.
+        </p>
+      </div>
+    </div>
+
+    <!-- Sheet-music diff animation -->
+    <figure class="diff-wrap" id="diff-h" aria-labelledby="diff-cap">
+      <svg id="sheet-diff" xmlns="http://www.w3.org/2000/svg"></svg>
+      <div class="diff-legend" aria-hidden="true">
+        <span><i style="background:#00C000"></i>Correct</span>
+        <span><i style="background:#CD7F32"></i>Timing off</span>
+        <span><i style="background:#8B0000"></i>Wrong note</span>
+        <span><i style="background:#B7B7B7"></i>Missed</span>
+      </div>
+      <figcaption class="arch-caption" id="diff-cap">
+        Score-aligned playback diff — rebuilt, inside a teacher who knows you.
+      </figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ===== Footer ===== -->
+<footer class="site-footer" role="contentinfo">
+  <p class="contact">
+    <span>Geoff Walker</span>
+    <span class="dot" aria-hidden="true"></span>
+    <a href="https://linkedin.com/in/geoff-walker-a3ab02227" target="_blank" rel="noopener">LinkedIn</a>
+    <span class="dot" aria-hidden="true"></span>
+    <a href="mailto:geoffwalker@outlook.com">email</a>
+  </p>
+  <a class="back-home" href="/">← Home</a>
+</footer>
+
+<div class="archie-panel" role="dialog" aria-label="Chat with Archie">
+  <div class="archie-panel-head">
+    <span class="ap-mark">A</span>
+    <span>Archie</span>
+    <span class="ap-status">online</span>
+  </div>
+  <div class="archie-panel-body"></div>
+  <form class="archie-panel-foot">
+    <input type="text" placeholder="Ask about Geoff's work…" autocomplete="off" aria-label="Your message">
+    <button type="submit">Send</button>
+  </form>
+</div>
+<div class="archie-fab">
+  <button class="archie-fab-btn" aria-label="Chat with Archie" aria-expanded="false">A</button>
+</div>
+
+<script src="wheel.js?v=3"></script>
+<script src="sheetdiff.js?v=3"></script>
+<script src="app.js?v=3"></script>
+<script src="/assets/nav-controls.js"></script>
+<script src="/assets/archie-chat.js"></script>
+<script>
+  // Boot the visuals
+  TomWheel.start(document.getElementById("wheel"));
+  TomDiff.start(document.getElementById("sheet-diff"));
+</script>
+</body>
+</html>

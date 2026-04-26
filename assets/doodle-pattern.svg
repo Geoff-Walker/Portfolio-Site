@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="260" height="260" viewBox="0 0 260 260">
+  <defs>
+    
+  </defs>
+  
+  <g class="g" transform="translate(22 30)">
+    <path d="M0 14 V1 L10 -1 V10"></path>
+    <ellipse cx="-2" cy="14" rx="3.2" ry="2.4"></ellipse>
+    <ellipse cx="8" cy="10" rx="3.2" ry="2.4"></ellipse>
+  </g>
+  
+  <g class="f" transform="translate(90 22)">
+    <path d="M8 0 L10 5.5 L16 6 L11.5 10 L13 16 L8 12.5 L3 16 L4.5 10 L0 6 L6 5.5 Z"></path>
+  </g>
+  
+  <g class="g" transform="translate(160 34)">
+    <path d="M8 14 C8 14 0 9 0 4 A4 4 0 0 1 8 4 A4 4 0 0 1 16 4 C16 9 8 14 8 14 Z"></path>
+  </g>
+  
+  <g class="g" transform="translate(210 72)">
+    <path d="M0 8 L18 0 L14 16 L9 10 L0 8 Z"></path>
+    <path d="M9 10 L18 0"></path>
+  </g>
+  
+  <g class="g" transform="translate(40 98)">
+    <path d="M0 2 H12 V10 a4 4 0 0 1 -4 4 H4 a4 4 0 0 1 -4 -4 Z"></path>
+    <path d="M12 4 h3 a2 2 0 0 1 0 4 H12"></path>
+    <path d="M3 -2 v-3 M6 -2 v-4 M9 -2 v-3"></path>
+  </g>
+  
+  <g class="f" transform="translate(130 108)">
+    <path d="M5 0 L6.2 3.5 L10 4 L7 6.5 L8 10 L5 8 L2 10 L3 6.5 L0 4 L3.8 3.5 Z"></path>
+  </g>
+  
+  <g class="g" transform="translate(186 118)">
+    <circle cx="8" cy="8" r="8"></circle>
+    <circle class="f" cx="5.5" cy="6.5" r="0.8"></circle>
+    <circle class="f" cx="10.5" cy="6.5" r="0.8"></circle>
+    <path d="M4.5 10 Q8 13 11.5 10"></path>
+  </g>
+  
+  <g class="g" transform="translate(20 170)">
+    <path d="M6 0 a6 6 0 0 1 6 6 c0 3 -2 5 -3 7 H3 c-1 -2 -3 -4 -3 -7 a6 6 0 0 1 6 -6 Z"></path>
+    <path d="M3 14 h6 M4 16 h4"></path>
+  </g>
+  
+  <g class="g" transform="translate(76 168)">
+    <rect x="0" y="0" width="20" height="14" rx="1"></rect>
+    <path d="M0 2 L10 9 L20 2"></path>
+  </g>
+  
+  <g class="g" transform="translate(130 178)">
+    <path d="M4 10 a4 4 0 0 1 0 -8 a5 5 0 0 1 9 -1 a3 3 0 0 1 3 5 H4 Z"></path>
+  </g>
+  
+  <g class="g" transform="translate(200 190)">
+    <path d="M0 10 V0 L6 -1 V8"></path>
+    <ellipse cx="-2" cy="10" rx="2.4" ry="1.8"></ellipse>
+    <ellipse cx="4" cy="8" rx="2.4" ry="1.8"></ellipse>
+  </g>
+  
+  <g class="f" transform="translate(40 226)">
+    <path d="M6 0 L7.4 4.2 L12 4.8 L8.4 7.8 L9.6 12 L6 9.6 L2.4 12 L3.6 7.8 L0 4.8 L4.6 4.2 Z"></path>
+  </g>
+  
+  <g class="g" transform="translate(100 230)">
+    <path d="M0 4 L4 8 L12 0"></path>
+  </g>
+  
+  <g class="g" transform="translate(164 224)">
+    <circle cx="6" cy="6" r="2"></circle>
+    <circle cx="6" cy="0" r="2.4"></circle>
+    <circle cx="6" cy="12" r="2.4"></circle>
+    <circle cx="0" cy="6" r="2.4"></circle>
+    <circle cx="12" cy="6" r="2.4"></circle>
+  </g>
+  
+  <g class="g" transform="translate(220 220)">
+    <path d="M6 0 L12 6 L6 14 L0 6 Z"></path>
+    <path d="M0 6 H12 M3 3 L9 3"></path>
+  </g>
+</svg>

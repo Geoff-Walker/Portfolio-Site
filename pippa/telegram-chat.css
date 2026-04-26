@@ -1,0 +1,390 @@
+/* =========================================================================
+   Telegram Chat Chrome — stylesheet
+   Shared by ui_kits/telegram_chat/ and ui_kits/portfolio_page/.
+   Depends on /colors_and_type.css for tokens.
+   ========================================================================= */
+
+/* ---------- Phone frame ---------- */
+
+.tg-phone {
+  position: relative;
+  width: 360px;
+  height: 780px;
+  background: var(--tg-canvas);
+  border: 6px solid var(--tg-bezel);
+  border-radius: var(--r-phone);
+  box-shadow: var(--shadow-phone);
+  overflow: hidden;
+  /* 1px inner highlight to suggest bezel */
+  outline: 1px solid var(--tg-bezel-highlight);
+  outline-offset: -7px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Notch */
+.tg-phone::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 20px;
+  background: var(--tg-bezel);
+  border-bottom-left-radius: var(--r-notch);
+  border-bottom-right-radius: var(--r-notch);
+  z-index: 5;
+}
+
+/* ---------- Status bar ---------- */
+
+.tg-statusbar {
+  height: 32px;
+  flex: 0 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px 0 24px;
+  color: var(--fg1);
+  font-size: var(--fs-statusbar);
+  font-weight: var(--fw-semibold);
+  background: var(--tg-canvas);
+  position: relative;
+  z-index: 2;
+  /* give room past the notch */
+  padding-top: 4px;
+}
+
+.tg-statusbar__time {
+  font-variant-numeric: tabular-nums;
+}
+
+.tg-statusbar__icons {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  opacity: 0.6;
+}
+
+.tg-statusbar__icons svg {
+  width: 16px;
+  height: 16px;
+  stroke: var(--fg1);
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ---------- Chat header ---------- */
+
+.tg-header {
+  height: 56px;
+  flex: 0 0 56px;
+  background: var(--tg-surface);
+  display: flex;
+  align-items: center;
+  padding: 0 10px 0 4px;
+  gap: 10px;
+  border-bottom: 1px solid var(--tg-divider);
+}
+
+.tg-header__avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(160deg, #5BC0DE 0%, #4AA8CE 100%);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  letter-spacing: 0;
+}
+
+.tg-header__back,
+.tg-header__menu {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fg1);
+  cursor: pointer;
+}
+.tg-header__back svg,
+.tg-header__menu svg {
+  width: 22px;
+  height: 22px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.tg-header__identity {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1px;
+  line-height: 1.15;
+}
+
+.tg-header__name {
+  color: var(--fg1);
+  font-size: 17px;
+  font-weight: var(--fw-semibold);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  letter-spacing: 0;
+}
+
+.tg-header__sub {
+  color: var(--fg3);
+  font-size: var(--fs-botlabel);
+  font-weight: var(--fw-regular);
+}
+
+/* ---------- Chat area ---------- */
+
+.tg-chat {
+  flex: 1;
+  min-height: 0;
+  background-color: var(--tg-canvas);
+  background-image: url("../../assets/doodle-pattern.svg");
+  background-size: 260px 260px;
+  background-repeat: repeat;
+  padding: 12px 10px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.tg-chat::-webkit-scrollbar { display: none; }
+
+/* When two consecutive bubbles come from the same sender, tighten the gap */
+.tg-chat__group + .tg-chat__group--same {
+  margin-top: -4px; /* 8px default → 4px effective */
+}
+
+/* ---------- Bubbles ---------- */
+
+.tg-bubble {
+  max-width: 78%;
+  min-width: 72px;           /* always enough width for time */
+  padding: 7px 12px 20px;
+  /* Reserve horizontal space inside the text block for the absolute-positioned
+     timestamp so short messages like "AR1" don't collide with it. */
+  padding-right: 62px;       /* pippa: time only */
+  color: var(--fg1);
+  font-size: var(--fs-bubble);
+  line-height: 1.38;
+  position: relative;
+  word-wrap: break-word;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity var(--dur-fade) var(--ease-out),
+              transform var(--dur-fade) var(--ease-out);
+}
+
+/* user bubbles show time + ticks, so reserve more room */
+.tg-bubble--user {
+  padding-right: 80px;
+  min-width: 92px;
+}
+.tg-bubble.is-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.tg-bubble--pippa {
+  background: var(--tg-bubble-in);
+  border-radius: var(--r-bubble);
+  border-bottom-left-radius: var(--r-bubble-tail);
+  align-self: flex-start;
+}
+
+.tg-bubble--user {
+  /* Each user bubble gets a flat fill interpolated along the gradient by --pos
+     (0 = top blue, 1 = bottom violet), set on the element via inline style. */
+  --_p: var(--pos, 0);
+  /* simple rgb lerp — #3A7BD5 (58,123,213) → #6C4AB6 (108,74,182) */
+  background-color: rgb(
+    calc(58  + (108 - 58)  * var(--_p)),
+    calc(123 + (74  - 123) * var(--_p)),
+    calc(213 + (182 - 213) * var(--_p))
+  );
+  border-radius: var(--r-bubble);
+  border-bottom-right-radius: var(--r-bubble-tail);
+  align-self: flex-end;
+}
+
+/* when a bubble follows another from the same sender, square off the tail corner */
+.tg-bubble--pippa.is-follow {
+  border-top-left-radius: var(--r-bubble-tail);
+  border-bottom-left-radius: var(--r-bubble);
+}
+.tg-bubble--user.is-follow {
+  border-top-right-radius: var(--r-bubble-tail);
+  border-bottom-right-radius: var(--r-bubble);
+}
+
+.tg-bubble__ts {
+  position: absolute;
+  right: 10px;
+  bottom: 4px;
+  color: var(--fg3);
+  font-size: var(--fs-ts);
+  font-weight: var(--fw-medium);
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.tg-bubble--user .tg-bubble__ts {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.tg-bubble__ticks {
+  display: inline-block;
+  width: 14px;
+  height: 10px;
+  position: relative;
+  color: #83C8F3; /* light blue read-ticks on user bubbles */
+}
+.tg-bubble__ticks::before,
+.tg-bubble__ticks::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 1px;
+  width: 9px;
+  height: 6px;
+  border-left: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-52deg) skewX(8deg);
+  border-bottom-left-radius: 1px;
+}
+.tg-bubble__ticks::after {
+  left: 4px;
+}
+
+/* ---------- Typing indicator ---------- */
+
+.tg-typing {
+  align-self: flex-start;
+  background: var(--tg-bubble-in);
+  border-radius: var(--r-bubble);
+  border-bottom-left-radius: var(--r-bubble-tail);
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 200ms var(--ease-out),
+              transform 200ms var(--ease-out);
+}
+.tg-typing.is-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.tg-typing__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: tg-typing-pulse 1400ms ease-in-out infinite;
+}
+.tg-typing__dot:nth-child(2) { animation-delay: 200ms; }
+.tg-typing__dot:nth-child(3) { animation-delay: 400ms; }
+
+@keyframes tg-typing-pulse {
+  0%, 100% { opacity: 0.3; }
+  50%      { opacity: 1;   }
+}
+
+/* ---------- Input bar ---------- */
+
+.tg-input {
+  height: 52px;
+  flex: 0 0 52px;
+  background: var(--tg-surface);
+  display: flex;
+  align-items: center;
+  padding: 0 6px;
+  gap: 2px;
+  border-top: 1px solid var(--tg-divider);
+}
+
+.tg-input__btn {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fg3);
+  cursor: text;
+}
+.tg-input__btn svg {
+  width: 22px;
+  height: 22px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.tg-input__btn--send {
+  width: 36px;
+  height: 36px;
+  margin-left: 2px;
+  margin-right: 2px;
+  background: var(--accent);
+  border-radius: 50%;
+  color: #fff;
+}
+.tg-input__btn--send svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2;
+}
+
+.tg-input__field {
+  flex: 1;
+  height: 36px;
+  background: transparent;
+  border: none;
+  color: var(--fg2);
+  font-family: var(--font-body);
+  font-size: 15px;
+  padding: 0 8px;
+  outline: none;
+}
+.tg-input__field::placeholder {
+  color: var(--fg3);
+}
+
+/* ---------- Reduced motion ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .tg-bubble,
+  .tg-typing {
+    transition: none;
+  }
+  .tg-typing__dot {
+    animation: none;
+    opacity: 0.8;
+  }
+}

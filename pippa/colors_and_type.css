@@ -1,0 +1,196 @@
+/* =========================================================================
+   Pippa Design System — Telegram Night Mode
+   Colors, typography, and semantic tokens.
+   ========================================================================= */
+
+:root {
+  /* ---------- Palette (pixel-accurate Telegram Night Mode) ---------- */
+  --tg-canvas:          #17212B;   /* page / chat area background             */
+  --tg-surface:         #1F2C39;   /* elevated: header, input bar, cards      */
+  --tg-bubble-in:       #182533;   /* incoming (Pippa) bubble                 */
+  --tg-bubble-out:      #2B5278;   /* outgoing (user) bubble — base blue      */
+  --tg-bubble-out-top:  #3A7BD5;   /* outgoing gradient top  — brighter blue  */
+  --tg-bubble-out-bot:  #6C4AB6;   /* outgoing gradient bot  — violet         */
+  --tg-divider:         #232E3C;   /* subtle 1px lines                        */
+  --tg-bezel:           #2A3642;   /* phone frame outer border                */
+  --tg-bezel-highlight: #3A4A5A;   /* 1px inset bezel highlight               */
+
+  --tg-text-primary:    #FFFFFF;   /* headings, names, bubble text            */
+  --tg-text-body:       #D8DEE4;   /* long-form body copy (warmer + higher contrast) */
+  --tg-text-muted:      #8392A1;   /* timestamps, secondary, captions         */
+
+  --tg-accent:          #6AB3F3;   /* links, focus, typing dots, online ring  */
+  --tg-online:          #4FAE4E;   /* "online" / bot status green dot         */
+
+  /* ---------- Semantic aliases (use these in components) ---------- */
+  --bg:                 var(--tg-canvas);
+  --bg-elevated:        var(--tg-surface);
+  --fg1:                var(--tg-text-primary);
+  --fg2:                var(--tg-text-body);
+  --fg3:                var(--tg-text-muted);
+  --accent:             var(--tg-accent);
+  --border:             var(--tg-divider);
+
+  /* ---------- Typography ---------- */
+  --font-system: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                 "Helvetica Neue", Arial, sans-serif;
+  --font-body:   var(--font-system);
+  --font-head:   var(--font-system);
+  --font-ui:     var(--font-system);
+
+  /* Type scale — page chrome */
+  --fs-hero-d:     80px;   /* desktop hero title               */
+  --fs-hero-t:     60px;   /* tablet hero title                */
+  --fs-hero-m:     44px;   /* mobile hero title                */
+  --fs-sub-d:      26px;
+  --fs-sub-t:      24px;
+  --fs-sub-m:      22px;
+  --fs-subline-d:  20px;
+  --fs-subline-t:  19px;
+  --fs-subline-m:  18px;
+  --fs-body-d:     20px;
+  --fs-body-t:     19px;
+  --fs-body-m:     17px;
+  --fs-card-title: 22px;
+  --fs-card-body:  17px;
+  --fs-caption:    14px;
+
+  /* Type scale — chat UI (pixel-accurate Telegram) */
+  --fs-bubble:     16px;
+  --fs-name:       17px;
+  --fs-ts:         12px;
+  --fs-statusbar:  13px;
+  --fs-botlabel:   13px;
+
+  /* Weights */
+  --fw-regular:    420;    /* slightly heavier than true 400 for contrast */
+  --fw-medium:     520;
+  --fw-semibold:   650;
+
+  /* Line heights */
+  --lh-body:       1.6;
+  --lh-tight:      1.3;
+  --lh-head:       1.1;
+
+  /* Letter spacing */
+  --ls-head:       -0.02em;
+
+  /* ---------- Radii ---------- */
+  --r-card:        12px;
+  --r-bubble:      16px;
+  --r-bubble-tail: 4px;    /* corner on the tail side of a bubble     */
+  --r-phone:       40px;   /* phone frame outer                       */
+  --r-notch:       14px;   /* phone notch bottom corners              */
+  --r-input:       20px;   /* composer input pill                     */
+
+  /* ---------- Elevation / shadow ---------- */
+  --shadow-phone:  0 40px 80px rgba(0, 0, 0, 0.5);
+  --shadow-card:   none;   /* cards use border, not shadow, in Telegram */
+
+  /* ---------- Spacing ---------- */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-24: 96px;
+  --space-32: 128px;
+  --space-40: 160px;
+
+  /* ---------- Layout max-widths ---------- */
+  --maxw-prose-d:  680px;
+  --maxw-prose-t:  620px;
+  --maxw-prose-m:  100%;
+  --maxw-hero-d:   720px;
+  --maxw-hero-t:   560px;
+  --maxw-caption:  480px;
+
+  /* ---------- Motion ---------- */
+  --ease-out:      cubic-bezier(0.2, 0.7, 0.2, 1);
+  --dur-fade:      240ms;  /* message fade-up                         */
+  --dur-typing:    1400ms; /* typing-dot pulse cycle                  */
+  --dur-caption:   400ms;
+}
+
+/* =========================================================================
+   Semantic element defaults
+   ========================================================================= */
+
+html, body {
+  background: var(--bg);
+  color: var(--fg2);
+  font-family: var(--font-body);
+  font-size: var(--fs-body-m);
+  line-height: var(--lh-body);
+  font-weight: var(--fw-regular);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@media (min-width: 768px) {
+  html, body { font-size: var(--fs-body-t); }
+}
+@media (min-width: 1024px) {
+  html, body { font-size: var(--fs-body-d); }
+}
+
+h1, h2, h3, h4 {
+  color: var(--fg1);
+  font-family: var(--font-head);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-head);
+  line-height: var(--lh-head);
+  margin: 0;
+}
+
+h1 { font-size: var(--fs-hero-m); }
+h2 { font-size: var(--fs-sub-m); }
+h3 { font-size: var(--fs-card-title); }
+
+@media (min-width: 768px) {
+  h1 { font-size: var(--fs-hero-t); }
+  h2 { font-size: var(--fs-sub-t); }
+}
+@media (min-width: 1024px) {
+  h1 { font-size: var(--fs-hero-d); }
+  h2 { font-size: var(--fs-sub-d); }
+}
+
+p { margin: 0 0 1em 0; }
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+a:hover { text-decoration: underline; }
+a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* =========================================================================
+   Utility classes
+   ========================================================================= */
+
+.tg-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--r-card);
+  padding: var(--space-6);
+}
+
+.tg-caption {
+  color: var(--fg3);
+  font-size: var(--fs-caption);
+  font-style: italic;
+}
+
+.tg-muted { color: var(--fg3); }
+.tg-body  { color: var(--fg2); }
+.tg-fg    { color: var(--fg1); }
