@@ -1,3 +1,10 @@
 assets/Screenshot*.png
 assets/Screenshot*.jpg
 tom/scratch/
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+.env*
+!.env.example
