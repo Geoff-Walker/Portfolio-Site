@@ -4,3 +4,13 @@ compatibility_date = "2025-01-01"
 
 [assets]
 directory = "."
+
+[[routes]]
+pattern = "geoff-walker.uk"
+custom_domain = true
+zone_name = "geoff-walker.uk"
+
+[[routes]]
+pattern = "www.geoff-walker.uk"
+custom_domain = true
+zone_name = "geoff-walker.uk"
