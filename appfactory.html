@@ -398,7 +398,7 @@
   <div class="af-hero-meta">
     <div>SYSTEM // ONLINE</div>
     <div class="ok">● 7 AGENTS · 2 GATES</div>
-    <div>v.2026.04</div>
+    <div>v.2026.06</div>
   </div>
   <div class="af-hero-overlay">
     <span class="label">// case study</span>
@@ -413,7 +413,9 @@
     <h2 class="reveal">A specification goes in. Working software comes out.</h2>
     <div class="body reveal">
       <p>AppFactory is the system I built to turn a project specification into working software <strong>without constant supervision</strong>. It orchestrates specialised AI agents through a stateful pipeline graph, with human approval gates at every decision point that matters.</p>
-      <p><strong>Three layers.</strong> n8n handles scheduling, infrastructure checks, and notifications. LangGraph manages the stateful pipeline graph — which agents run, in what order, and what happens at each gate. Claude Code agents — Design, QA, Development, Infrastructure, Research — run headless on a Linux VM with direct access to the codebase and infrastructure.</p>
+      <p><strong>The shape of it.</strong> LangGraph manages the stateful pipeline graph — which agents run, in what order, and what happens at each gate. Specialised Claude Code agents — Design, QA, Development, Infrastructure, Research — run headless on a Linux VM with direct access to the codebase. A custom MCP server bridges the two into my working session, so I can dispatch a run, watch live state, and clear gates without leaving Claude Code.</p>
+      <p><strong>The agents don't grep blind.</strong> AppFactory keeps a custom code-graph of the target repo — a Neo4j model of every symbol, endpoint, DTO, dependency and test across TypeScript and C#, parsed into two isolated views: the in-progress branch and what's live in production. Planning a change means querying that graph through a purpose-built 17-tool MCP server, reasoning about impact against the codebase's real structure.</p>
+      <p><strong>And it works.</strong> AppFactory took <a href="tom/" style="color:var(--accent);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px;">musicTeacher</a> — a multimodal AI music-teacher app — from a specification through Jira tickets, code, pull request, staging, and into production, through the full pipeline. A real, substantial Angular and .NET application, built by the system this page describes.</p>
     </div>
   </div>
 </section>
@@ -450,9 +452,9 @@
     <div class="pipeline-grid reveal">
       <div class="pipe-col">
         <span class="label">Layer one</span>
-        <h3>n8n</h3>
-        <span class="sub">Pre & Post Processing</span>
-        <p>Infrastructure checks before a pipeline run starts. Scheduling — run overnight or on demand. Post-pipeline notifications. The connective tissue between the pipeline and the outside world.</p>
+        <h3>LangGraph</h3>
+        <span class="sub">The Pipeline Graph</span>
+        <p>The orchestration layer. Stateful graphs — research, iterative development, QA, infrastructure — decide which agents run, in what order, and what happens when a gate fires. State flows through the graph; every agent reads from it and writes to it. It does not advance until a gate is cleared, and a run can pause and resume exactly where it stopped.</p>
         <span class="layer-num">// 01</span>
       </div>
       <div class="pipe-col">
@@ -464,16 +466,16 @@
       </div>
       <div class="pipe-col">
         <span class="label">Layer two</span>
-        <h3>LangGraph</h3>
-        <span class="sub">The Pipeline Graph</span>
-        <p>The business logic layer. LangGraph manages which agents run, in what order, and what happens when a gate fires. Pipeline state flows through the graph — every agent reads from it, every agent writes to it. The graph does not advance until a gate is cleared.</p>
+        <h3>Claude Code Agents</h3>
+        <span class="sub">The Work Layer</span>
+        <p>Specialised agents running Claude Code headless on a Linux VM. Design produces the visual system and prototype; QA writes Jira tickets with acceptance criteria; Development implements them; Infrastructure manages the server; Research backs decisions with current information. Work is routed by cost — scoped tickets to a cheaper model, judgment calls to a stronger one.</p>
         <span class="layer-num">// 02</span>
       </div>
       <div class="pipe-col">
         <span class="label">Layer three</span>
-        <h3>Claude Code Agents</h3>
-        <span class="sub">The Work Layer</span>
-        <p>Five specialised agents, each running Claude Code in headless mode on a Linux VM. Design produces the visual system and HTML prototype. QA writes Jira tickets with acceptance criteria. Development implements from the tickets. Infrastructure manages the server. Research backs every decision with current information.</p>
+        <h3>Observability &amp; guardrails</h3>
+        <span class="sub">Trust the run</span>
+        <p>Every node is traced — Langfuse over OpenTelemetry links a whole multi-agent run into one record, with token and cost on each step. Agents return typed outcomes — completed, blocked, or research-needed — so nothing fails silently. And the hard rules are enforced in code: the pipeline never merges to main.</p>
         <span class="layer-num">// 03</span>
       </div>
     </div>
@@ -673,17 +675,19 @@
     <h2 class="reveal">Stack.</h2>
     <div class="stack-list reveal">
       <span class="hi">LangGraph</span>
-      <span class="hi">n8n</span>
       <span class="hi">Claude API</span>
       <span class="hi">Claude Code</span>
       <span class="hi">LangGraph MCP Server</span>
+      <span class="hi">code-graph</span>
       <span>Python</span>
       <span>TypeScript</span>
       <span>Docker</span>
       <span>Linux</span>
       <span>Qdrant</span>
-      <span>OpenAI embeddings</span>
-      <span>Langfuse</span>
+      <span>Neo4j</span>
+      <span>Embeddings · nomic-embed-text / OpenAI</span>
+      <span>Langfuse · OpenTelemetry</span>
+      <span>Infisical</span>
       <span>TrueNAS SCALE</span>
       <span>GitHub Actions</span>
     </div>
@@ -734,7 +738,7 @@
 <footer>
   <div class="container">
     <span>© 2026 Geoff Walker</span>
-    <span>AppFactory · v.2026.04</span>
+    <span>AppFactory · v.2026.06</span>
   </div>
 </footer>
 
