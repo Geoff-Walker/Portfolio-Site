@@ -1,0 +1,148 @@
+/* ────────────────────────────────────────────────────────────────
+   Tom — Design Tokens
+   Canonical source for the unified mock. Everything starts here.
+   Lifts to SCSS partials at Angular implementation time.
+
+   Imports the Nunito web font and exposes every token as a CSS
+   custom property on :root. Components live in tom-shell.css and
+   in per-screen stylesheets — never re-declare a token, always
+   reference one of these vars.
+   ──────────────────────────────────────────────────────────────── */
+
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap');
+
+:root {
+  /* ── 12-Note colour system ─────────────────────────────────────
+     Permanent semantic colours. Every appearance of a note in the
+     app — wheel segments, chord cards, fretboard dots, piano keys,
+     skill-tree nodes — uses these exact values. */
+  --note-C:  #E85C2A;
+  --note-G:  #E87A2A;
+  --note-D:  #E8A42A;
+  --note-A:  #C8C830;  /* needs --ink-warm text */
+  --note-E:  #72C830;  /* needs --ink-warm text */
+  --note-B:  #2AB862;
+  --note-Fs: #2AB8A8;
+  --note-Db: #2A7AB8;
+  --note-Ab: #2A4AB8;
+  --note-Eb: #622AB8;
+  --note-Bb: #A82AB8;
+  --note-F:  #C8306A;
+
+  /* ── Gold accent ───────────────────────────────────────────────
+     Single non-note colour. Reserved for active tonic + active mode
+     indicators, completed-state ornament, XP. Never decorative. */
+  --gold:       #C9A227;   /* SHAPE FILL only — XP bolt, completion */
+  --gold-text:  #A88320;   /* TEXT/ICON — AA-passing on white       */
+
+  /* ── Skill galaxy palette ──────────────────────────────────────
+     Per-skill semantic colours. Used on Skills (galaxies, nebulae,
+     mini-galaxies) and on Home (group-card glows that tie back to
+     Skills). Distinct vocabulary from note colours: note colours
+     map to notes, skill galaxy colours map to skills. */
+  --gal-guitar:  #72C830;
+  --gal-piano:   #E85C2A;
+  --gal-bass:    #2AB862;
+  --gal-ableton: #2AB8A8;
+
+  /* ── Surfaces ──────────────────────────────────────────────── */
+  --page-bg:    #F5F5F5;
+  --surface:    #FFFFFF;
+  --ring-light: #F1F1F1;
+  --ring-dark:  #E8E8E8;
+  --border:     #E0E0E0;
+  --ring-sep:   #A8A8A8;
+  --hairline:   #ECECEC;
+  --tab-border: #D8D8D8;
+
+  /* ── Text ──────────────────────────────────────────────────── */
+  --ink:        #1A1A1A;
+  --ink-2:      #6B6B6B;     /* secondary — meta, inactive tabs    */
+  --ink-warm:   #2D1A00;     /* on A and E note swatches only      */
+  --label:      #6B6B6B;     /* alias of --ink-2                   */
+  --label-soft: #9A9A9A;     /* decorative non-text only           */
+  --hint:       #B8B8B8;
+
+  /* ── Spacing scale ─────────────────────────────────────────── */
+  --space-xs:   4px;
+  --space-sm:   8px;
+  --space-md:   14px;
+  --space-lg:   20px;
+  --space-xl:   32px;
+  --space-page: 48px;
+
+  /* ── Radius ───────────────────────────────────────────────── */
+  --radius-sm:  6px;
+  --radius-md:  10px;
+  --radius-lg:  12px;
+  --radius-xl:  14px;
+
+  /* ── Shadows ──────────────────────────────────────────────── */
+  --sh-card:  0 2px 10px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.04);
+  --sh-note:  0 1px 2px rgba(0,0,0,0.12);
+  --sh-badge: drop-shadow(0 1px 2px rgba(0,0,0,0.18));
+  --sh-tab:   0 1px 3px rgba(0,0,0,0.06);
+  --sh-pop:   0 4px 16px rgba(0,0,0,0.06);
+  --sh-pop-lg: 0 12px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06);
+
+  /* ── Motion ───────────────────────────────────────────────── */
+  --ease-out:        cubic-bezier(0.33, 1, 0.68, 1);
+  --ease-out-cubic:  cubic-bezier(0.16, 1, 0.3, 1);
+  --t-hover:    150ms;
+  --t-state:    200ms;
+  --t-drawer:   220ms;
+  --t-key-min:  400ms;
+  --t-key-max:  1000ms;
+
+  /* ── Typography ────────────────────────────────────────────── */
+  --font-sans: 'Nunito', system-ui, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* ── Shell layout ──────────────────────────────────────────────
+     Reserved heights for the persistent shell chrome. Pages compute
+     their content-available height from these. Phase B: tabbar +
+     bottom 16 + buffer = 96px (per design system v1.1 §12). */
+  --header-h:    56px;
+  --nav-reserve: 96px;
+  --top-pad:     12px;
+  --avail-h:     calc(100dvh - var(--header-h) - var(--nav-reserve) - var(--top-pad));
+
+  /* ── Chat panel (right-edge slide-out) ───────────────────────── */
+  --chat-trigger-size:  44px;
+  --chat-trigger-right: 8px;
+  --chat-trigger-top:   30%;
+  --chat-panel-w:       clamp(320px, 32vw, 420px);
+}
+
+/* ── Base ──────────────────────────────────────────────────────── */
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+button, select, input, textarea { font-family: inherit; }
+
+/* ── Type scale (semantic helpers) ───────────────────────────── */
+.t-display    { font-size: 32px;  font-weight: 800; letter-spacing: -0.3px; line-height: 1.1;  color: var(--ink); }
+.t-heading    { font-size: 20px;  font-weight: 800; letter-spacing: -0.3px;                   color: var(--ink); }
+.t-subheading { font-size: 18px;  font-weight: 800;                                            color: var(--ink); }
+.t-body       { font-size: 14px;  font-weight: 400;                                            color: var(--ink); }
+.t-label      { font-size: 12px;  font-weight: 700; color: var(--label); letter-spacing: 0.4px; text-transform: uppercase; }
+.t-caption    { font-size: 12px;  font-weight: 600; color: var(--label); font-feature-settings: "tnum" 1; }
+.t-hint       { font-size: 12px;  font-weight: 500; color: var(--hint); }
+
+/* ── Focus (global) ──────────────────────────────────────────── */
+:focus { outline: none; }
+:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+:focus:not(:focus-visible) { outline: none; }

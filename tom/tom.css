@@ -1,0 +1,470 @@
+/* ---------- Tom · Teacher of Music ---------- */
+/* Styled to the REAL musicTeacher app design language (tokens ported verbatim
+   from the app's _tokens.scss / _base.scss). Same page layout, app surfaces. */
+
+:root {
+  /* 12-note colour system (app) */
+  --note-C:  #E85C2A; --note-G:  #E87A2A; --note-D:  #E8A42A; --note-A:  #C8C830;
+  --note-E:  #72C830; --note-B:  #2AB862; --note-Fs: #2AB8A8; --note-Db: #2A7AB8;
+  --note-Ab: #2A4AB8; --note-Eb: #622AB8; --note-Bb: #A82AB8; --note-F:  #C8306A;
+
+  /* Gold accent (the app's single non-note colour) */
+  --gold:      #C9A227;
+  --gold-text: #A88320;
+
+  /* Surfaces */
+  --page-bg:   #F5F5F5;
+  --surface:   #FFFFFF;
+  --border:    #E0E0E0;
+  --hairline:  #ECECEC;
+  --ring-sep:  #A8A8A8;
+
+  /* Text */
+  --ink:        #1A1A1A;
+  --ink-2:      #6B6B6B;
+  --label:      #6B6B6B;
+  --label-soft: #9A9A9A;
+  --hint:       #B8B8B8;
+
+  /* Radius / shadow / motion */
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 14px;
+  --sh-card: 0 2px 10px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.04);
+  --sh-pop:  0 4px 16px rgba(0,0,0,0.06);
+  --ease-out: cubic-bezier(0.33, 1, 0.68, 1);
+
+  /* Typography — Nunito throughout (the app uses one family) */
+  --font-display: "Nunito", system-ui, sans-serif;
+  --font-body:    "Nunito", system-ui, sans-serif;
+
+  /* Layout */
+  --gutter: clamp(20px, 4vw, 56px);
+  --col: min(1180px, calc(100vw - var(--gutter) * 2));
+
+  /* Legacy aliases — so inline HTML refs (nav, modality dots, diff) still resolve */
+  --canvas: var(--page-bg);
+  --rule: var(--border);
+  --rule-soft: var(--hairline);
+  --ink-soft: var(--ink-2);
+  --ink-mute: var(--label-soft);
+  --fsh: var(--note-Db); --gsh: var(--note-Ab); --ash: var(--note-Bb);
+  --csh: var(--note-Eb); --g: var(--note-E);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection { background: var(--ink); color: #fff; }
+img, svg { display: block; max-width: 100%; }
+
+a {
+  color: var(--gold-text);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  text-decoration-color: rgba(168, 131, 32, 0.4);
+  transition: color .2s, text-decoration-color .2s;
+}
+a:hover { color: var(--ink); text-decoration-color: var(--ink); }
+a:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; border-radius: 6px; }
+
+/* The app uses NO italics — emphasis is weight + colour, never slant */
+em, i { font-style: normal; }
+.beat-body em { font-weight: 700; color: var(--ink); }
+
+/* ---------- Hero ---------- */
+.hero {
+  position: relative;
+  min-height: 100vh;
+  padding: clamp(120px, 14vh, 180px) var(--gutter) clamp(60px, 8vh, 100px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.45fr);
+  gap: 0;
+  align-items: center;
+  overflow: hidden;
+}
+.hero-copy { position: relative; z-index: 2; max-width: 560px; }
+
+.eyebrow {
+  font-size: 12px; font-weight: 700;
+  letter-spacing: 0.4px; text-transform: uppercase;
+  color: var(--label);
+  margin: 0 0 24px;
+  display: flex; align-items: center; gap: 12px;
+}
+.eyebrow::before {
+  content: ""; width: 24px; height: 2px; border-radius: 1px;
+  background: var(--gold); display: inline-block;
+}
+
+.hero h1 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(44px, 6.6vw, 92px);
+  line-height: 1.02;
+  letter-spacing: -1px;
+  margin: 0 0 28px;
+  color: var(--ink);
+}
+.hero h1 .line { display: block; }
+.hero h1 .line-2 { color: var(--ink); }
+.hero h1 .line-3 {
+  display: block;
+  font-size: 0.32em;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  color: var(--ink-2);
+  line-height: 1.3;
+  margin-top: 20px;
+  max-width: 20ch;
+}
+
+.hero-lede {
+  font-size: 17px; font-weight: 500;
+  line-height: 1.6; color: var(--ink-2);
+  max-width: 52ch; margin: 0;
+}
+.hero-lede em { font-style: normal; font-weight: 700; color: var(--ink); }
+
+.hero-visual {
+  position: relative; z-index: 1;
+  align-self: center; justify-self: start;
+  width: 100%; max-width: 780px;
+  aspect-ratio: 1 / 1;
+  overflow: visible;
+}
+.hero-visual > svg { display: block; width: 100%; height: 100%; overflow: visible; }
+
+/* ---------- Section frame ---------- */
+.section { padding: clamp(72px, 11vh, 150px) var(--gutter); position: relative; }
+.section-inner { width: var(--col); margin: 0 auto; }
+
+.section-head {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: clamp(20px, 4vw, 56px);
+  align-items: baseline;
+  margin-bottom: clamp(36px, 6vh, 64px);
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+}
+.section-num {
+  font-size: 12px; font-weight: 700;
+  letter-spacing: 0.4px; text-transform: uppercase;
+  color: var(--label);
+}
+.section-title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(32px, 4.6vw, 60px);
+  line-height: 1.05;
+  letter-spacing: -0.5px;
+  margin: 0;
+  color: var(--ink);
+}
+.section-title em { font-style: normal; color: var(--gold-text); }
+
+.section-opener {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(20px, 2.2vw, 28px);
+  line-height: 1.35;
+  letter-spacing: -0.3px;
+  color: var(--ink);
+  max-width: 34ch;
+  margin: 0 0 clamp(40px, 6vh, 72px);
+}
+.section-opener em { font-style: normal; color: var(--gold-text); }
+
+/* ---------- Editorial body grid (app-styled blocks) ---------- */
+.beat {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  gap: clamp(20px, 4vw, 56px);
+  padding: clamp(26px, 4vh, 44px) 0;
+  border-top: 1px solid var(--hairline);
+}
+.beat:first-of-type { border-top: none; padding-top: 0; }
+.beat-marker {
+  font-size: 12px; font-weight: 700;
+  letter-spacing: 0.4px; text-transform: uppercase;
+  color: var(--label); padding-top: 4px;
+}
+.beat-body {
+  max-width: 65ch;
+  font-size: 16px; font-weight: 400;
+  line-height: 1.6; color: var(--ink-2);
+}
+.beat-body p { margin: 0 0 1.1em; }
+.beat-body p:last-child { margin-bottom: 0; }
+.beat-body strong.lede {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.1em;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+.beat-body strong.lede a { color: inherit; }
+
+.section-close {
+  margin-top: clamp(40px, 6vh, 72px);
+  padding-top: clamp(24px, 4vh, 36px);
+  border-top: 1px solid var(--border);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(19px, 2vw, 24px);
+  line-height: 1.4;
+  color: var(--ink);
+  max-width: 52ch;
+}
+.section-close em { font-style: normal; color: var(--gold-text); }
+
+/* ---------- Architecture diagram — app card ---------- */
+.arch-wrap {
+  margin: clamp(40px, 6vh, 72px) 0;
+  padding: clamp(28px, 4vw, 48px) clamp(20px, 4vw, 40px);
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--sh-card);
+  position: relative;
+}
+.arch-caption {
+  font-size: 13px; font-weight: 600;
+  color: var(--label);
+  margin-top: 18px; text-align: center;
+}
+.arch-svg { width: 100%; height: auto; }
+
+/* ---------- App screen frames — live embeds of the real app ---------- */
+.screen-frames {
+  display: flex; flex-direction: column;
+  gap: clamp(24px, 4vh, 44px);
+  margin: clamp(28px, 4vh, 48px) 0 clamp(8px, 2vh, 16px);
+}
+.screen-frame {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--sh-card);
+  overflow: hidden;
+}
+.screen-frame__bar {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px;
+  background: var(--page-bg);
+  border-bottom: 1px solid var(--hairline);
+}
+.screen-frame__dots { display: inline-flex; gap: 6px; flex: none; }
+.screen-frame__dots i { width: 10px; height: 10px; border-radius: 50%; background: var(--border); display: block; }
+.screen-frame__name { font-family: var(--font-display); font-weight: 800; font-size: 14px; color: var(--ink); }
+.screen-frame__tag {
+  margin-left: auto; display: inline-flex; align-items: center; gap: 7px;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--gold-text);
+}
+.screen-frame__tag::before {
+  content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--note-B);
+  box-shadow: 0 0 0 3px rgba(42,184,98,0.18);
+}
+.screen-frame iframe {
+  display: block; width: 100%; height: 680px; border: 0; background: var(--page-bg);
+}
+.screen-frame__cap {
+  font-size: 13px; font-weight: 600; color: var(--label);
+  margin: 0; padding: 14px 16px; border-top: 1px solid var(--hairline);
+}
+@media (max-width: 720px) {
+  .screen-frame iframe { height: 540px; }
+}
+
+/* ---------- Multimodal stack list ---------- */
+.stack-intro {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(19px, 1.7vw, 23px);
+  line-height: 1.4;
+  margin: 0 0 24px;
+  color: var(--ink);
+}
+.stack-intro em { font-style: normal; color: var(--gold-text); }
+
+.stack {
+  list-style: none; margin: 6px 0 clamp(36px, 5vh, 56px); padding: 0;
+  display: flex; flex-direction: column; gap: 12px;
+}
+/* Each row is the theory card, as a long rectangle: surface + border + shadow,
+   the pip dot on the left, and a soft coloured blur (instead of a status pill). */
+.stack li {
+  position: relative; isolation: isolate; overflow: hidden;
+  display: grid; grid-template-columns: 168px 1fr auto;
+  gap: clamp(14px, 2vw, 28px); align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--sh-card);
+  padding: 18px 22px;
+  color: var(--note-Db);
+}
+.stack li::before {
+  content: ""; position: absolute; inset: -55% -20% auto auto;
+  width: 42%; height: 210%; border-radius: 50%;
+  filter: blur(40px); opacity: 0.18; z-index: -1; pointer-events: none;
+  background: currentColor;
+}
+.stack li.is-partial::before { opacity: 0.11; }
+.stack li.is-arch::before    { opacity: 0.06; }
+.stack .modality {
+  display: flex; align-items: center; gap: 10px;
+  font-family: var(--font-display); font-weight: 800;
+  font-size: clamp(16px, 1.3vw, 19px); color: var(--ink);
+}
+.stack .modality .glyph {
+  width: 11px; height: 11px; border-radius: 50%; flex: none; margin: 0;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.12);
+}
+.stack .desc { font-size: 14px; font-weight: 500; line-height: 1.5; color: var(--ink-2); }
+
+/* "Coming soon" — the app's Tom Hears toast pill, as a static badge */
+.stack .soon {
+  justify-self: end; align-self: center;
+  background: var(--ink); color: #fff;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.02em;
+  padding: 5px 12px; border-radius: 999px; white-space: nowrap;
+}
+.stack li.is-arch .modality { opacity: 0.86; }
+.stack li.is-arch .desc { opacity: 0.92; }
+
+.stack li.m-text    { color: var(--note-Db); }  .m-text    .glyph { background: var(--note-Db); }
+.stack li.m-vision  { color: var(--note-Ab); }  .m-vision  .glyph { background: var(--note-Ab); }
+.stack li.m-time    { color: var(--note-Bb); }  .m-time    .glyph { background: var(--note-Bb); }
+.stack li.m-library { color: var(--gold);    }  .m-library .glyph { background: var(--gold); }
+.stack li.m-score   { color: var(--note-C);  }  .m-score   .glyph { background: var(--note-C); }
+.stack li.m-midi    { color: var(--note-Eb); }  .m-midi    .glyph { background: var(--note-Eb); }
+.stack li.m-audio   { color: var(--note-E);  }  .m-audio   .glyph { background: var(--note-E); }
+
+/* ---------- Pedagogy tiles (lifted from the app's theory-tile card) ---------- */
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 6px 0 clamp(36px, 5vh, 56px);
+}
+@media (min-width: 760px) { .tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.tile {
+  position: relative; isolation: isolate; overflow: hidden;
+  background: var(--surface);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--sh-card);
+  padding: 16px 16px 14px;
+  display: flex; flex-direction: column; gap: 6px;
+  min-height: 124px;
+  color: var(--ink);
+  transition: transform var(--ease-out) 150ms, box-shadow var(--ease-out) 150ms;
+}
+.tile:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.05); }
+.tile__glow {
+  position: absolute; inset: -36% -36% auto auto;
+  width: 64%; height: 64%; border-radius: 50%;
+  filter: blur(28px); opacity: 0.16; z-index: -1;
+  pointer-events: none; background: currentColor;
+}
+.tile__head { display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
+.tile__pip {
+  width: 10px; height: 10px; border-radius: 50%; flex: none;
+  background: currentColor; box-shadow: 0 1px 2px rgba(0,0,0,0.12);
+}
+.tile__status {
+  margin-left: auto;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase;
+  color: var(--ink-2); opacity: 0.85;
+}
+.tile__title { font-weight: 800; font-size: 16px; line-height: 1.25; color: var(--ink); }
+.tile__desc { font-size: 13px; font-weight: 500; line-height: 1.4; color: var(--ink-2); flex: 1 1 auto; }
+
+/* ---------- Sheet-music diff — app card ---------- */
+.diff-wrap {
+  margin: clamp(40px, 6vh, 72px) 0 0;
+  padding: clamp(24px, 4vw, 40px) clamp(20px, 4vw, 36px);
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--sh-card);
+}
+.diff-svg { width: 100%; height: auto; }
+.diff-legend {
+  display: flex; flex-wrap: wrap; gap: 14px 26px; justify-content: center;
+  margin-top: 20px;
+  font-size: 12.5px; font-weight: 600; color: var(--ink-2);
+}
+.diff-legend span { display: inline-flex; align-items: center; gap: 8px; }
+.diff-legend i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+
+/* ---------- Footer ---------- */
+.site-footer {
+  padding: clamp(72px, 11vh, 130px) var(--gutter) 32px;
+  text-align: center;
+  font-size: 14px; font-weight: 600; color: var(--ink-2);
+}
+.site-footer .contact {
+  display: inline-flex; align-items: center; gap: 14px;
+  flex-wrap: wrap; justify-content: center;
+}
+.site-footer .dot {
+  width: 3px; height: 3px; border-radius: 50%;
+  background: var(--label-soft); display: inline-block;
+}
+.back-home {
+  display: block; margin: 56px auto 0;
+  font-family: var(--font-display);
+  font-weight: 700; font-size: 14px;
+  color: var(--ink-2); text-decoration: none; width: max-content;
+}
+.back-home:hover { color: var(--ink); }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 1024px) {
+  .hero {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.7fr);
+    gap: 0;
+    padding-top: clamp(110px, 16vh, 160px);
+  }
+  .hero-visual { max-width: 340px; }
+  .section-head { grid-template-columns: 1fr; gap: 12px; }
+  .beat { grid-template-columns: 1fr; gap: 12px; }
+  .beat-marker { padding-top: 0; }
+}
+
+@media (max-width: 720px) {
+  .hero { grid-template-columns: 1fr; gap: clamp(24px, 4vw, 48px); padding-top: 96px; }
+  .hero-visual { max-width: 380px; order: 2; }
+  .hero-copy { order: 1; }
+  body { font-size: 15px; }
+  .hero h1 { font-size: clamp(38px, 11vw, 60px); }
+  .stack li { grid-template-columns: 1fr; gap: 6px; padding: 16px 18px; }
+  .arch-wrap { padding: 22px 16px; }
+}
+
+@media (max-width: 420px) {
+  .hero h1 { font-size: clamp(34px, 12vw, 50px); }
+  .section { padding-top: 60px; padding-bottom: 60px; }
+  .section-title { font-size: clamp(28px, 9vw, 44px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.001s !important; transition-duration: 0.01s !important; }
+}

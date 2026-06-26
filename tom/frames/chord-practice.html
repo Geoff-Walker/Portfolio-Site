@@ -1,0 +1,1983 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>Tom — Chord Practice Screen v15</title>
+<link rel="stylesheet" href="tom-tokens.css">
+<link rel="stylesheet" href="tom-shell.css">
+<style>
+/* ────────────────────────────────────────────────────────────────
+   Chord Practice — Theory sub-screen
+   Shell chrome via tom-shell.css (sub-screen header variant —
+   back-chev + centred kmode pill + XP/Lv pill on right). Local
+   overrides keep the chord-card grid math intact.
+   ──────────────────────────────────────────────────────────────── */
+
+:root {
+  --gold-home:   #6B5410;        /* I chord — settled gold copy text */
+  --nav-reserve: 120px;          /* override shell default — generous grid clearance */
+  --top-pad:     20px;
+  --gap:         16px;
+  --avail-h:     calc(100dvh - var(--header-h) - var(--nav-reserve) - var(--top-pad));
+  --w-from-h:    calc((14 * var(--avail-h) + 208px) / 9);
+}
+
+body { background: var(--page-bg); }
+
+.kmode-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 4px 3px 3px;
+  background: #fff;
+  border: 1px solid var(--tab-border);
+  border-radius: 999px;
+  box-shadow: var(--sh-tab);
+  cursor: pointer;
+}
+.kmode-pill:hover { filter: brightness(0.98); }
+.kmode-pill__disc {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px;
+  font-weight: 800;
+  color: #fff;
+  border: 1.5px solid #fff;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.10);
+  flex-shrink: 0;
+}
+.kmode-pill__name {
+  height: 22px;
+  border-radius: 999px;
+  padding: 0 12px 0 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  border: 1px solid rgba(255,255,255,0.6);
+  background: rgb(185,185,185);
+  color: var(--ink);
+}
+
+/* ────────────────────────────────────────────────────────────────
+   MAIN — centred grid, never overlaps nav pill
+   ──────────────────────────────────────────────────────────────── */
+main {
+  flex: 1;
+  min-height: 0;
+  padding: var(--top-pad) 28px var(--nav-reserve);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* ── 4×2 GRID — sized so cards keep 280/360 aspect AND fit ─── */
+.grid {
+  width: min(100%, var(--w-from-h), 1240px);
+  height: var(--avail-h);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: 1fr 1fr;
+  gap: var(--gap);
+  grid-template-areas:
+    "ii  vi  iii vii"
+    "iv  i   v   set";
+}
+.cell-ii  { grid-area: ii;  }
+.cell-vi  { grid-area: vi;  }
+.cell-iii { grid-area: iii; }
+.cell-vii { grid-area: vii; }
+.cell-IV  { grid-area: iv;  }
+.cell-I   { grid-area: i;   }
+.cell-V   { grid-area: v;   }
+.cell-set { grid-area: set; }
+
+/* ── Card ─────────────────────────────────────────────────────── */
+/* Each card is its own container — internals scale with the cell,
+   not the viewport. Robust against zoom + display scaling. */
+.card {
+  container-type: size;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.04);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  cursor: pointer;
+  height: 100%;
+  width: 100%;
+  min-height: 0;
+  min-width: 0;
+  transition: box-shadow .22s ease, transform .22s ease, filter .35s ease, opacity .35s ease;
+}
+.card-head {
+  flex: 0 0 18%;
+  padding: 0 clamp(10px, 7cqi, 20px);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.card .numeral {
+  font-size: clamp(16px, 9cqi, 30px);
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: 0.4px;
+  line-height: 1;
+}
+.card .diagram {
+  flex: 1;
+  display: flex; align-items: center; justify-content: center;
+  padding: clamp(2px, 2cqi, 8px) clamp(8px, 5cqi, 16px);
+  min-height: 0;
+}
+.card .diagram svg {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+}
+.card .notes {
+  flex: 0 0 16%;
+  padding: 0 clamp(10px, 7cqi, 20px);
+  display: flex; justify-content: center; align-items: center;
+  gap: clamp(6px, 5cqi, 14px);
+}
+.note-circle {
+  width:  clamp(20px, 12cqi, 36px);
+  height: clamp(20px, 12cqi, 36px);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800;
+  font-size: clamp(10px, 5cqi, 14px);
+  border: 1.25px solid #fff;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.12);
+}
+.card.state-inert      { filter: grayscale(0.9); opacity: 0.55; }
+.card.state-off        { filter: grayscale(1);   opacity: 0.40; }
+.card.is-home .numeral { color: var(--gold-home); }
+
+/* Beat pulse — fired once per beat on the "now" card. The chord-
+   coloured inset ring briefly thickens and the drop shadow blooms,
+   then settles back to the static "now" treatment. Box-shadow is
+   not clipped by overflow:hidden so this works without changing
+   the card's clipping. --chord-color / --chord-color-glow are set
+   inline by buildCard from the chord's note colour. */
+.card.is-beat-pulse {
+  animation: card-beat var(--beat-ms, 500ms) cubic-bezier(0.22, 0.7, 0.32, 1);
+}
+@keyframes card-beat {
+  0% {
+    box-shadow:
+      0 0 0 6px var(--chord-color, var(--ink)),
+      0 0 0 7.5px #FFFFFF,
+      0 0 0 9px rgba(0,0,0,0.20),
+      0 22px 48px var(--chord-color-glow, rgba(0,0,0,0.30)),
+      0 4px 10px rgba(0,0,0,0.12);
+    transform: translateY(-5px) scale(1.018);
+  }
+  55% {
+    box-shadow:
+      0 0 0 4.5px var(--chord-color, var(--ink)),
+      0 0 0 6px #FFFFFF,
+      0 0 0 7px rgba(0,0,0,0.18),
+      0 14px 30px var(--chord-color-glow, rgba(0,0,0,0.30)),
+      0 2px 6px rgba(0,0,0,0.08);
+    transform: translateY(-3px) scale(1.006);
+  }
+  100% {
+    /* Empty — falls back to inline box-shadow + transform set by
+       buildCard so the static "now" treatment resumes between
+       beats. */
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card.is-beat-pulse { animation: none; }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   SETTINGS CELL — same outer dimensions as a card.
+   Header (cycle nav) + body distributed via grid rows so content
+   never overflows or pushes the cell taller.
+   ════════════════════════════════════════════════════════════════ */
+/* Settings cell is also its own container — every internal size
+   scales with the cell. */
+.cell-set {
+  container-type: size;
+  background: var(--surface);
+  border-radius: 14px;
+  box-shadow: var(--sh-card);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  height: 100%;
+  width: 100%;
+  min-height: 0;
+}
+.settings-head {
+  flex: 0 0 clamp(28px, 14cqh, 56px);
+  display: flex;
+  align-items: center;
+  gap: clamp(2px, 2cqi, 10px);
+  padding: 0 clamp(4px, 4cqi, 14px);
+  border-bottom: 1px solid var(--hairline);
+}
+.settings-cycle {
+  flex: 0 0 clamp(20px, 11cqi, 38px);
+  width:    clamp(20px, 11cqi, 38px);
+  height:   clamp(20px, 11cqi, 38px);
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  color: var(--ink-2);
+  cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.settings-cycle:hover { background: rgba(0,0,0,0.04); color: var(--ink); }
+.settings-cycle svg {
+  width:  clamp(8px, 4.5cqi, 16px);
+  height: clamp(8px, 4.5cqi, 16px);
+}
+.settings-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: center;
+  font-size: clamp(8px, 5cqi, 15px);
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.settings-body {
+  flex: 1;
+  min-height: 0;
+  padding: clamp(6px, 7cqi, 26px) clamp(6px, 7cqi, 26px);
+  overflow: hidden;
+  display: flex;
+}
+
+/* Display control — only the active view renders.
+   Layout properties live on the per-view classes BUT NEVER set `display`. */
+.sview { display: none; width: 100%; height: 100%; }
+.sview.is-on { display: flex; }                                   /* default for active */
+
+/* Views that need grid layout — promote display only when active.
+   Progression is flex (column with scroll) — handled by default. */
+.sview-tempo.is-on,
+.sview-opts.is-on,
+.sview-chords.is-on { display: grid; }
+
+/* ── View: Tempo ── BPM pill, centred play, beat strip
+   All sizes scale with cell (cqi/cqh) so it composes at any size. */
+.sview-tempo {
+  grid-template-rows: auto 1fr auto;
+  align-items: center;
+  justify-items: center;
+  gap: clamp(4px, 4cqi, 18px);
+}
+.bpm {
+  display: inline-flex;
+  align-items: baseline;
+  gap: clamp(2px, 2cqi, 8px);
+  padding: clamp(4px, 4cqi, 14px) clamp(8px, 8cqi, 26px);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: #fff;
+  cursor: pointer;
+  line-height: 1;
+}
+.bpm:hover { border-color: var(--ink-2); }
+.bpm__num {
+  font-size: clamp(10px, 10cqi, 32px);
+  font-weight: 800;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.bpm__lbl {
+  font-size: clamp(6px, 5cqi, 15px);
+  font-weight: 700;
+  color: var(--label);
+  letter-spacing: 0.04em;
+  text-transform: lowercase;
+}
+
+/* Hybrid BPM — typeable input on the left, caret-popover on the
+   right. Mirrors the scale-visualiser idiom. The input inherits
+   the .bpm__num font/size from the same selector so it visually
+   matches the static-span variant; the .bpm container is the
+   focus ring. */
+.bpm--hybrid {
+  gap: clamp(2px, 1.5cqi, 6px);
+}
+input.bpm__num {
+  font-family: inherit;
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  width: 3.4ch;
+  text-align: right;
+  outline: none;
+  cursor: text;
+  -moz-appearance: textfield;
+}
+input.bpm__num::-webkit-outer-spin-button,
+input.bpm__num::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.bpm:focus-within {
+  border-color: var(--ink-2);
+  box-shadow: 0 0 0 2px rgba(0,0,0,0.06);
+}
+.bpm__caret-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  padding: 0 clamp(2px, 1.5cqi, 6px);
+  margin: 0;
+  cursor: pointer;
+  color: var(--label);
+  line-height: 1;
+}
+.bpm__caret-btn:hover { color: var(--ink); }
+.bpm__caret-btn[aria-expanded="true"] { color: var(--ink); }
+.bpm__caret {
+  font-size: clamp(6px, 5cqi, 14px);
+  color: var(--label);
+}
+.play-btn {
+  width:  clamp(28px, 32cqi, 96px);
+  height: clamp(28px, 32cqi, 96px);
+  border-radius: 50%;
+  background: var(--ink);
+  color: #fff;
+  border: 0;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  position: relative;
+  transition: filter 150ms ease-out;
+}
+.play-btn:hover { filter: brightness(1.08); }
+.play-btn svg { width: 32%; height: 32%; }
+.play-btn.is-running { background: var(--gold); color: var(--ink); }
+.play-btn.is-running::after {
+  content: "";
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+  border: 2px solid var(--gold);
+  opacity: 0.45;
+  animation: pulse-ring 1.4s ease-out infinite;
+}
+@keyframes pulse-ring {
+  0%   { transform: scale(0.92); opacity: 0.55; }
+  100% { transform: scale(1.18); opacity: 0; }
+}
+.beat-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(2px, 2cqi, 9px);
+}
+.beat__segs {
+  display: grid;
+  grid-template-columns: repeat(4, clamp(10px, 11cqi, 38px));
+  gap: clamp(2px, 2cqi, 9px);
+}
+.beat__seg {
+  height: clamp(3px, 3cqi, 11px);
+  border-radius: 999px;
+  background: #E5E5E5;
+}
+.beat__seg.is-on  { background: var(--ink); }
+.beat__seg.is-one { background: var(--gold); }
+.beat__counter {
+  font-size: clamp(6px, 4cqi, 13px);
+  font-weight: 700;
+  color: var(--label);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+}
+.beat__counter b { color: var(--ink); font-weight: 800; }
+
+/* ── View: Progression ── fixed bar heights + scroll fallback
+   Each bar is a comfortable size derived from cqh; the container
+   scrolls if more bars are added. 4 bars + Add fits by default.
+   Right padding keeps bars off the scrollbar. */
+.sview-prog {
+  flex-direction: column;
+  gap: clamp(2px, 2.5cqi, 9px);
+  align-items: stretch;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  padding-right: clamp(2px, 4cqi, 14px);
+}
+.bar {
+  flex: 0 0 clamp(18px, 16cqh, 52px);
+  background: #FAFAFA;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 0 clamp(4px, 6cqi, 18px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: border-color 150ms ease-out, background 150ms ease-out;
+  min-height: 0;
+}
+.bar:hover { border-color: var(--ink-2); }
+.bar__num {
+  font-size: clamp(6px, 4cqi, 12px);
+  font-weight: 700;
+  color: var(--label);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+}
+.bar__chord {
+  font-size: clamp(8px, 8cqi, 22px);
+  font-weight: 800;
+  color: var(--ink);
+  line-height: 1;
+}
+.bar.is-active {
+  background: #fff;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 1px var(--gold) inset, 0 2px 8px rgba(201,162,39,0.16);
+}
+.bar.is-active .bar__num { color: var(--gold-text); }
+.bar-add {
+  flex: 0 0 clamp(14px, 12cqh, 40px);
+  background: transparent;
+  border: 1.25px dashed var(--border);
+  border-radius: 8px;
+  color: var(--label);
+  font-size: clamp(6px, 4.5cqi, 13px);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  min-height: 0;
+}
+.bar-add:hover { border-color: var(--ink-2); color: var(--ink); }
+
+/* ── View: Options ── 3 label/select pairs, evenly spaced
+   Each block: small uppercase label + full-width select.
+   All sizes scale with the cell. */
+.sview-opts {
+  grid-template-rows: repeat(3, 1fr);
+  gap: clamp(4px, 4cqi, 18px);
+  align-items: center;
+}
+.opt-block {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1px, 2cqi, 8px);
+}
+.opt-lbl {
+  font-size: clamp(6px, 4cqi, 12px);
+  font-weight: 700;
+  color: var(--label);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+.select {
+  font-size: clamp(7px, 5.5cqi, 15px);
+  font-weight: 700;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: clamp(3px, 4cqi, 12px) clamp(12px, 12cqi, 34px) clamp(3px, 4cqi, 12px) clamp(4px, 6cqi, 16px);
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' stroke='%231A1A1A' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  cursor: pointer;
+  width: 100%;
+  transition: border-color 150ms ease-out;
+}
+.select:hover { border-color: var(--ink-2); }
+
+/* ── View: Instrument / Drill mode ── single centred block
+   All sizes scale with the cell. */
+.sview-inst, .sview-drill {
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: clamp(4px, 5cqi, 16px);
+}
+.opt-lbl-centred {
+  text-align: center;
+  font-size: clamp(6px, 4cqi, 12px);
+  font-weight: 700;
+  color: var(--label);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.stack {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid var(--tab-border);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--sh-tab);
+}
+.stack button {
+  font-size: clamp(7px, 5.5cqi, 15px);
+  font-weight: 700;
+  background: #fff;
+  color: var(--ink-2);
+  border: 0;
+  padding: clamp(4px, 5cqi, 16px) clamp(4px, 6cqi, 18px);
+  cursor: pointer;
+  text-align: center;
+  transition: background 100ms ease-out, color 100ms ease-out;
+}
+.stack button:hover { background: #FAFAFA; color: var(--ink); }
+.stack button + button { border-top: 1px solid #EEEEEE; }
+.stack button.active {
+  background: var(--ink);
+  color: #fff;
+  font-weight: 800;
+}
+.stack button.active:hover { background: var(--ink); color: #fff; }
+
+/* ── View: Chords ── 7 equal rows with hairline separators.
+   Strict column alignment: numeral | name | toggle. All cq-scaled. */
+.sview-chords {
+  grid-template-rows: repeat(7, 1fr);
+  align-items: stretch;
+  gap: 0;
+}
+.chord-row {
+  display: grid;
+  grid-template-columns: clamp(16px, 16cqi, 48px) 1fr clamp(16px, 16cqi, 44px);
+  column-gap: clamp(2px, 4cqi, 12px);
+  align-items: center;
+  padding: 0 clamp(1px, 2cqi, 8px);
+  cursor: pointer;
+  min-height: 0;
+  border-bottom: 1px solid var(--hairline);
+  transition: background 100ms ease-out;
+}
+.chord-row:last-child { border-bottom: 0; }
+.chord-row:hover { background: #FAFAFA; }
+.chord-row .num {
+  font-size: clamp(6px, 5cqi, 14px);
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: 0.04em;
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+}
+.chord-row .lbl {
+  font-size: clamp(7px, 5.5cqi, 15px);
+  font-weight: 700;
+  color: var(--ink);
+  text-align: left;
+}
+.chord-row.is-off .num,
+.chord-row.is-off .lbl { color: var(--label-soft); }
+.toggle {
+  --tog-w: clamp(14px, 14cqi, 38px);
+  --tog-h: clamp(8px, 8cqi, 22px);
+  width:  var(--tog-w);
+  height: var(--tog-h);
+  border-radius: 999px;
+  background: #DEDEDE;
+  position: relative;
+  border: 0;
+  cursor: pointer;
+  transition: background 150ms ease-out;
+  justify-self: end;
+  padding: 0;
+}
+.toggle::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width:  calc(var(--tog-h) - 4px);
+  height: calc(var(--tog-h) - 4px);
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+  transition: transform 150ms ease-out;
+}
+.chord-row.is-on .toggle { background: var(--gold); }
+.chord-row.is-on .toggle::before {
+  transform: translateX(calc(var(--tog-w) - var(--tog-h)));
+}
+
+/* ── View: Key & Mode ── big key disc + mode pill, centred.
+   Chevrons removed: clicking the disc opens the key-modal (lifted
+   from scale-visualiser) which lets the user pick any key including
+   the sharp / flat enharmonic spellings. */
+.sview-kmode {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(6px, 8cqi, 28px);
+}
+.kdisc-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.kdisc-big {
+  /* ~20% larger than the previous chevron-flanked version (10%
+     trim from the first pass — was looming a touch too large). */
+  width:  clamp(50px, 50cqi, 162px);
+  height: clamp(50px, 50cqi, 162px);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: clamp(20px, 23cqi, 72px);
+  font-weight: 800;
+  color: #fff;
+  border: 2px solid #fff;
+  box-shadow:
+    inset 0 0 0 1px rgba(0,0,0,0.10),
+    0 6px 18px rgba(0,0,0,0.12),
+    0 0 0 1px rgba(0,0,0,0.06);
+  cursor: pointer;
+  letter-spacing: -1px;
+  flex-shrink: 0;
+  background: var(--note-C);
+  transition: transform 180ms var(--ease-out, ease-out),
+              box-shadow 180ms var(--ease-out, ease-out);
+}
+.kdisc-big:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 0 0 1px rgba(0,0,0,0.10),
+    0 10px 22px rgba(0,0,0,0.16),
+    0 0 0 1px rgba(0,0,0,0.06);
+}
+.kpill {
+  height: clamp(14px, 14cqi, 40px);
+  border-radius: 999px;
+  padding: 0 clamp(6px, 11cqi, 32px);
+  display: flex; align-items: center; justify-content: center;
+  font-size: clamp(7px, 6cqi, 16px);
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  border: 1px solid rgba(255,255,255,0.6);
+  background: rgb(185,185,185);
+  color: var(--ink);
+  cursor: pointer;
+  min-width: clamp(50px, 58cqi, 174px);
+  transition: filter 150ms ease-out;
+}
+.kpill:hover { filter: brightness(0.96); }
+
+/* ── Mode selector list-popover (lifted from scale-visualiser).
+   Anchored under the kpill; opens on click, closes on click-out
+   or Escape. Same idiom as the visualiser's family/mode pickers
+   so the two screens behave identically. */
+.list-popover {
+  position: fixed;
+  top: 0; left: 0;
+  min-width: 180px;
+  max-width: 260px;
+  max-height: 60vh;
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow:
+    0 16px 40px rgba(0, 0, 0, 0.14),
+    0 4px 12px  rgba(0, 0, 0, 0.06),
+    0 0 0 1px   rgba(0, 0, 0, 0.02);
+  z-index: 60;
+  padding: 6px;
+  display: none;
+}
+.list-popover.is-open { display: block; }
+.list-popover__item {
+  display: flex; align-items: center;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 0;
+  background: transparent;
+  font-family: var(--font-sans);
+  font-size: 13px; font-weight: 700;
+  color: var(--ink);
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  text-align: left;
+}
+.list-popover__item:hover { background: var(--page-bg); }
+.list-popover__item[aria-selected="true"] {
+  background: var(--ink);
+  color: #fff;
+}
+
+/* ── Key modal — lifted from scale-visualiser. Click the big key
+   disc to open. 6×2 grid of natural notes + sharp/flat pairs. ── */
+.note-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.note-modal[hidden] { display: none; }
+
+.note-modal__scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.42);
+  backdrop-filter: blur(2px);
+  animation: scrim-in 180ms ease-out both;
+}
+@keyframes scrim-in { from { opacity: 0; } to { opacity: 1; } }
+
+.note-modal__panel {
+  position: relative;
+  background: var(--surface);
+  border-radius: 18px;
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.28),
+    0 8px 18px  rgba(0, 0, 0, 0.10),
+    0 0 0 1px   rgba(0, 0, 0, 0.04);
+  padding: 22px 22px 18px;
+  width: min(640px, 100%);
+  animation: panel-in 220ms ease-out both;
+}
+@keyframes panel-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0)   scale(1); }
+}
+.note-modal__head {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 18px;
+}
+.note-modal__title {
+  flex: 1; margin: 0;
+  font-size: 11px; font-weight: 800;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--ink-2);
+}
+.note-modal__close {
+  width: 28px; height: 28px;
+  border: 0; background: transparent; color: var(--ink-2);
+  cursor: pointer;
+  border-radius: 999px;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.note-modal__close:hover { color: var(--ink); background: var(--page-bg); }
+.note-modal__close svg { width: 14px; height: 14px; }
+
+.note-modal__grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+}
+.note-modal__hint {
+  margin-top: 16px;
+  font-size: 11px; font-weight: 600;
+  color: var(--ink-2);
+  text-align: center;
+  letter-spacing: 0.02em;
+}
+.note-modal__cell {
+  aspect-ratio: 1 / 1.4;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 6px;
+}
+.note-modal__chip {
+  --chip-color: var(--ink);
+  border: 0;
+  outline: 1.5px solid #fff;
+  outline-offset: -1.5px;
+  background: var(--chip-color);
+  color: #fff;
+  font-family: var(--font-sans);
+  font-weight: 800;
+  cursor: pointer;
+  border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  position: relative;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+  transition: transform 150ms ease-out, box-shadow 150ms ease-out;
+}
+.note-modal__chip:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.14);
+}
+.note-modal__chip[data-warm-text="true"] { color: var(--ink-warm); }
+.note-modal__chip--natural {
+  width: 64px; height: 64px;
+  font-size: 24px; line-height: 1;
+}
+.note-modal__chip--half {
+  width: 50px; height: 50px;
+  font-size: 14px; line-height: 1;
+}
+.note-modal__chip--current::before {
+  content: "";
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+  border: 2px solid var(--gold);
+  pointer-events: none;
+}
+@media (max-width: 520px) {
+  .note-modal__chip--natural { width: 52px; height: 52px; font-size: 20px; }
+  .note-modal__chip--half    { width: 42px; height: 42px; font-size: 12px; }
+}
+
+/* Bottom nav pill provided by tom-shell.css (.tabbar) */
+
+/* Minimal mobile fallback — focus is desktop, but don't break narrow */
+@media (max-width: 599px) {
+  .grid {
+    width: 100%;
+    height: auto;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: auto auto auto auto;
+    grid-template-areas:
+      "ii  vi"
+      "iii vii"
+      "iv  i"
+      "v   set";
+  }
+  .card, .cell-set { aspect-ratio: 280 / 360; }
+  main { overflow: auto; align-items: flex-start; padding-bottom: 100px; }
+}
+
+:focus:not(:focus-visible) { outline: none; }
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 6px; }
+</style>
+<style id="pf-frame-strip">
+  /* Portfolio embed — strip ONLY the app shell (header / tabbar / chat) so
+     nothing navigates off to screens that don't exist here. The chord
+     practice screen itself is left intact. */
+  .shell-header, .tabbar,
+  .chat-trigger, .chat-scrim, .chat-panel { display: none !important; }
+  :root { --header-h: 0px !important; --nav-reserve: 20px !important; }
+  html, body { background: var(--page-bg) !important; }
+  main { padding-top: 14px !important; }
+</style>
+</head>
+<body data-tom-state="celebration">
+<div class="app">
+
+  <header class="shell-header shell-header--sub">
+    <button type="button" class="back-chev" aria-label="Back to Theory" onclick="location.href='wheel.html'">
+      <svg viewBox="0 0 14 14" aria-hidden="true"><path d="M9 3 5 7l4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+    </button>
+    <div class="screen-identity">
+      <span class="screen-title">Chord Practice</span>
+      <button type="button" class="kmode-pill" id="kmode-pill" aria-label="Key C, mode Ionian — open key &amp; mode">
+        <span class="kmode-pill__disc" id="kmode-disc">C</span>
+        <span class="kmode-pill__name">Ionian</span>
+      </button>
+    </div>
+    <button type="button" class="xp-pill" aria-label="1,240 XP, Level 4">
+      <span class="xp-bolt" aria-hidden="true"></span>
+      <span>1,240 XP</span>
+      <span class="lvl">Lv 4</span>
+    </button>
+  </header>
+
+  <main>
+    <section class="grid" aria-label="Diatonic chords in C major">
+      <div class="cell-ii"  id="cell-ii"></div>
+      <div class="cell-vi"  id="cell-vi"></div>
+      <div class="cell-iii" id="cell-iii"></div>
+      <div class="cell-vii" id="cell-vii"></div>
+      <div class="cell-IV"  id="cell-IV"></div>
+      <div class="cell-I"   id="cell-I"></div>
+      <div class="cell-V"   id="cell-V"></div>
+
+      <section class="cell-set" aria-label="Practice settings">
+        <header class="settings-head">
+          <button type="button" class="settings-cycle" id="settings-prev" aria-label="Previous setting">
+            <svg viewBox="0 0 14 14" aria-hidden="true"><path d="M9 3 5 7l4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+          </button>
+          <div class="settings-title" id="settings-title">Tempo</div>
+          <button type="button" class="settings-cycle" id="settings-next" aria-label="Next setting">
+            <svg viewBox="0 0 14 14" aria-hidden="true"><path d="M5 3l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+          </button>
+        </header>
+
+        <div class="settings-body">
+
+          <div class="sview sview-tempo is-on" data-view="tempo">
+            <div class="bpm bpm--hybrid" id="bpm-pill">
+              <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="3" class="bpm__num" id="bpm-value" value="120" aria-label="Tempo in BPM, type a value between 40 and 300" />
+              <span class="bpm__lbl">bpm</span>
+              <button type="button" class="bpm__caret-btn" id="bpm-caret" data-placement="above" aria-haspopup="listbox" aria-expanded="false" aria-controls="bpm-popover" aria-label="Choose tempo from list">
+                <span class="bpm__caret" aria-hidden="true">▾</span>
+              </button>
+            </div>
+            <button type="button" class="play-btn" aria-label="Start drill">
+              <svg viewBox="0 0 18 18" aria-hidden="true">
+                <path d="M5 3v12l10-6z" fill="currentColor"/>
+              </svg>
+            </button>
+            <div class="beat-block">
+              <div class="beat__segs" role="group" aria-label="Beats in bar">
+                <div class="beat__seg is-one"></div>
+                <div class="beat__seg"></div>
+                <div class="beat__seg"></div>
+                <div class="beat__seg"></div>
+              </div>
+              <div class="beat__counter">Bar <b>1</b>/<b>4</b> · Beat <b>1</b></div>
+            </div>
+          </div>
+
+          <div class="sview sview-prog" data-view="prog">
+            <div class="bar is-active" data-chord="I"><span class="bar__num">Bar 1</span><span class="bar__chord">I</span></div>
+            <div class="bar" data-chord="IV"><span class="bar__num">Bar 2</span><span class="bar__chord">IV</span></div>
+            <div class="bar" data-chord="V"><span class="bar__num">Bar 3</span><span class="bar__chord">V</span></div>
+            <div class="bar" data-chord="I"><span class="bar__num">Bar 4</span><span class="bar__chord">I</span></div>
+            <button type="button" class="bar-add" aria-label="Add bar">+ Add bar</button>
+          </div>
+
+          <div class="sview sview-opts" data-view="opts">
+            <div class="opt-block">
+              <span class="opt-lbl">Click sound</span>
+              <select class="select"><option>Click</option><option>Drum loop A</option><option>Drum loop B</option></select>
+            </div>
+            <div class="opt-block">
+              <span class="opt-lbl">Time signature</span>
+              <select class="select"><option>4 / 4</option><option>3 / 4</option><option>6 / 8</option></select>
+            </div>
+            <div class="opt-block">
+              <span class="opt-lbl">Loop length</span>
+              <select class="select"><option>4 bars</option><option>8 bars</option><option>12 bars</option></select>
+            </div>
+          </div>
+
+          <div class="sview sview-inst" data-view="inst">
+            <span class="opt-lbl-centred">Instrument</span>
+            <div class="stack" role="tablist">
+              <button type="button" class="active" aria-selected="true">Guitar</button>
+              <button type="button" aria-selected="false">Piano</button>
+              <button type="button" aria-selected="false">Ukulele</button>
+            </div>
+          </div>
+
+          <div class="sview sview-drill" data-view="drill">
+            <span class="opt-lbl-centred">Drill mode</span>
+            <div class="stack" role="tablist">
+              <button type="button" aria-selected="false">Progression</button>
+              <button type="button" class="active" aria-selected="true">Random</button>
+              <button type="button" aria-selected="false">Memory</button>
+            </div>
+          </div>
+
+          <div class="sview sview-chords" data-view="chords"></div>
+
+          <div class="sview sview-kmode" data-view="kmode">
+            <div class="kdisc-wrap">
+              <button type="button" class="kdisc-big" id="kdisc-big" aria-label="Key C — open key picker" aria-haspopup="dialog" aria-expanded="false" aria-controls="key-modal">C</button>
+            </div>
+            <button type="button" class="kpill" id="mode-pill" aria-label="Mode Ionian — open mode picker" aria-haspopup="listbox" aria-expanded="false" aria-controls="mode-popover" data-placement="above">
+              <span id="mode-text">Ionian</span>
+            </button>
+          </div>
+
+        </div>
+      </section>
+
+    </section>
+  </main>
+
+  <nav class="tabbar" aria-label="Primary">
+    <button type="button" class="tab" onclick="location.href='landing.html'">Home</button>
+    <button type="button" class="tab" aria-current="page" onclick="location.href='theory.html'">Theory</button>
+    <button type="button" class="tab" onclick="location.href='tom-hears.html'">Tom Hears</button>
+    <button type="button" class="tab" onclick="location.href='skills.html'">Skills</button>
+  </nav>
+
+  <!-- ── Key modal — opens from the big key disc in the settings cell.
+       6×2 grid of natural notes + sharp/flat pairs (lifted from the
+       scale-visualiser's note-modal pattern). -->
+  <div class="note-modal" id="key-modal" role="dialog" aria-modal="true" aria-labelledby="key-modal-title" hidden>
+    <div class="note-modal__scrim" data-modal-close></div>
+    <div class="note-modal__panel" role="document">
+      <div class="note-modal__head">
+        <h2 class="note-modal__title" id="key-modal-title">Pick a key</h2>
+        <button type="button" class="note-modal__close" data-modal-close aria-label="Close">
+          <svg viewBox="0 0 14 14" aria-hidden="true"><path d="M3 3l8 8M11 3l-8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="note-modal__grid" id="key-modal-grid"></div>
+      <div class="note-modal__hint">Pairs show sharp on top, flat below — tap either to set the spelling.</div>
+    </div>
+  </div>
+
+  <!-- ── Mode popover — anchored above the kpill (placement="above")
+       so it doesn't get cut off by the bottom tabbar / chat panel. -->
+  <div class="list-popover" id="mode-popover" role="listbox" aria-label="Choose mode"></div>
+
+  <!-- ── BPM popover — anchored above the BPM caret. Same idiom as
+       scale-visualiser's tempo list. -->
+  <div class="list-popover" id="bpm-popover" role="listbox" aria-label="Choose tempo"></div>
+
+  <!-- ── Chat trigger (right-edge floating disc) ──────────────── -->
+  <button type="button" class="chat-trigger" id="chat-trigger" aria-label="Ask Tom" aria-expanded="false" aria-controls="chat-panel">T</button>
+
+  <!-- ── Chat panel ────────────────────────────────────────────── -->
+  <div class="chat-scrim" id="chat-scrim" aria-hidden="true"></div>
+  <aside class="chat-panel" id="chat-panel" aria-hidden="true" aria-labelledby="chat-panel-title">
+    <header class="chat-panel__head">
+      <h2 class="chat-panel__title" id="chat-panel-title">Ask Tom</h2>
+      <button type="button" class="chat-panel__close" id="chat-close" aria-label="Close">
+        <svg viewBox="0 0 14 14" aria-hidden="true"><path d="M3 3l8 8M11 3l-8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </header>
+    <div class="chat-panel__body">
+      <div class="chat-panel__placeholder-mark" aria-hidden="true">T</div>
+      <div class="chat-panel__placeholder-title">Tom is listening</div>
+      <p class="chat-panel__placeholder-body">Ask about anything you're working on. Chat is part of the Stage 3 build — for now this is the trigger and the surface only.</p>
+    </div>
+    <form class="chat-panel__compose" onsubmit="event.preventDefault();">
+      <input type="text" placeholder="Ask Tom anything…" aria-label="Message" disabled>
+    </form>
+  </aside>
+
+</div>
+
+<script>
+const COL = {
+  C:'#E85C2A', G:'#E87A2A', D:'#E8A42A', A:'#C8C830', E:'#72C830',
+  B:'#2AB862', 'F#':'#2AB8A8', Db:'#2A7AB8', Ab:'#2A4AB8',
+  Eb:'#622AB8', Bb:'#A82AB8', F:'#C8306A'
+};
+const DARK_TEXT = new Set(['A', 'E']);
+const tc = k => DARK_TEXT.has(k) ? '#2D1A00' : '#FFFFFF';
+
+function hexToRgba(hex, alpha) {
+  const r = parseInt(hex.slice(1,3), 16);
+  const g = parseInt(hex.slice(3,5), 16);
+  const b = parseInt(hex.slice(5,7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+/* ── Key data for the modal ─────────────────────────────────────
+   Same shape as the scale-visualiser's KEY_CELLS so the picker
+   behaves identically: 7 naturals + 5 sharp/flat pair cells, both
+   spellings selectable. Colour drawn from COL (note → palette). */
+const KEY_CELLS = [
+  { kind: 'natural', label: 'A',  paletteId: 'A'  },
+  { kind: 'pair',    sharp: 'A♯', flat: 'B♭', sharpId: 'A#', flatId: 'Bb', paletteId: 'Bb' },
+  { kind: 'natural', label: 'B',  paletteId: 'B'  },
+  { kind: 'natural', label: 'C',  paletteId: 'C'  },
+  { kind: 'pair',    sharp: 'C♯', flat: 'D♭', sharpId: 'C#', flatId: 'Db', paletteId: 'Db' },
+  { kind: 'natural', label: 'D',  paletteId: 'D'  },
+  { kind: 'pair',    sharp: 'D♯', flat: 'E♭', sharpId: 'D#', flatId: 'Eb', paletteId: 'Eb' },
+  { kind: 'natural', label: 'E',  paletteId: 'E'  },
+  { kind: 'natural', label: 'F',  paletteId: 'F'  },
+  { kind: 'pair',    sharp: 'F♯', flat: 'G♭', sharpId: 'F#', flatId: 'Gb', paletteId: 'F#' },
+  { kind: 'natural', label: 'G',  paletteId: 'G'  },
+  { kind: 'pair',    sharp: 'G♯', flat: 'A♭', sharpId: 'G#', flatId: 'Ab', paletteId: 'Ab' },
+];
+const PC_OF = {
+  A:9,  'A#':10, Bb:10, B:11, C:0,  'C#':1,  Db:1,
+  D:2,  'D#':3,  Eb:3,  E:4,  F:5,  'F#':6,  Gb:6,
+  G:7,  'G#':8,  Ab:8,
+};
+const WARM_TEXT = new Set(['A', 'E']);
+
+/* ── State + display sync ───────────────────────────────────────
+   Single source of truth for the current key. Updates the big
+   disc, the small disc inside the kmode pill in the header, and
+   the kmode-pill's aria-label. */
+const state = { key: 'C' };
+
+function displaySpelling(k) {
+  return k.replace('#', '♯').replace('b', '♭');
+}
+
+function syncKeyDisplay() {
+  const pc = PC_OF[state.key];
+  // Find the cell whose palette this pitch class lives in
+  const cell = KEY_CELLS.find(c =>
+    (c.kind === 'natural' && PC_OF[c.label] === pc) ||
+    (c.kind === 'pair'    && PC_OF[c.sharpId]  === pc)
+  );
+  const paletteId = cell ? cell.paletteId : 'C';
+  const colour = COL[paletteId] || COL.C;
+  const warm = WARM_TEXT.has(paletteId);
+  const textColour = warm ? '#2D1A00' : '#FFFFFF';
+  const display = displaySpelling(state.key);
+
+  ['kmode-disc', 'kdisc-big'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = display;
+    el.style.background = colour;
+    el.style.color = textColour;
+  });
+
+  const kdisc = document.getElementById('kdisc-big');
+  if (kdisc) kdisc.setAttribute('aria-label', `Key ${display} — open key picker`);
+
+  const pill = document.getElementById('kmode-pill');
+  if (pill) pill.setAttribute('aria-label', `Key ${display}, mode Ionian — open key & mode`);
+}
+
+syncKeyDisplay();
+
+/* ── Key modal — open / close / build grid / pick ─────────────── */
+const keyModal     = document.getElementById('key-modal');
+const keyModalGrid = document.getElementById('key-modal-grid');
+const kdiscBigBtn  = document.getElementById('kdisc-big');
+
+function buildKeyModalGrid() {
+  keyModalGrid.innerHTML = '';
+  KEY_CELLS.forEach(cell => {
+    const cellEl = document.createElement('div');
+    cellEl.className = 'note-modal__cell';
+
+    if (cell.kind === 'natural') {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'note-modal__chip note-modal__chip--natural';
+      chip.style.setProperty('--chip-color', COL[cell.paletteId]);
+      chip.textContent = cell.label;
+      chip.dataset.spelling = cell.label;
+      if (WARM_TEXT.has(cell.paletteId)) chip.dataset.warmText = 'true';
+      if (state.key === cell.label) chip.classList.add('note-modal__chip--current');
+      chip.addEventListener('click', () => pickKey(cell.label));
+      cellEl.appendChild(chip);
+    } else {
+      [{ id: cell.sharpId, label: cell.sharp },
+       { id: cell.flatId,  label: cell.flat  }].forEach(half => {
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'note-modal__chip note-modal__chip--half';
+        chip.style.setProperty('--chip-color', COL[cell.paletteId]);
+        chip.textContent = half.label;
+        chip.dataset.spelling = half.id;
+        if (WARM_TEXT.has(cell.paletteId)) chip.dataset.warmText = 'true';
+        if (state.key === half.id) chip.classList.add('note-modal__chip--current');
+        chip.addEventListener('click', () => pickKey(half.id));
+        cellEl.appendChild(chip);
+      });
+    }
+
+    keyModalGrid.appendChild(cellEl);
+  });
+}
+
+function pickKey(spelling) {
+  state.key = spelling;
+  syncKeyDisplay();
+  closeKeyModal();
+}
+
+function openKeyModal() {
+  buildKeyModalGrid();
+  keyModal.hidden = false;
+  if (kdiscBigBtn) kdiscBigBtn.setAttribute('aria-expanded', 'true');
+  document.documentElement.style.overflow = 'hidden';
+}
+function closeKeyModal() {
+  keyModal.hidden = true;
+  if (kdiscBigBtn) kdiscBigBtn.setAttribute('aria-expanded', 'false');
+  document.documentElement.style.overflow = '';
+}
+
+if (kdiscBigBtn) {
+  kdiscBigBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    openKeyModal();
+  });
+}
+keyModal.addEventListener('click', (e) => {
+  if (e.target.closest('[data-modal-close]')) closeKeyModal();
+});
+
+/* ── Mode list-popover ─────────────────────────────────────────
+   Seven diatonic modes in conventional order. Same shape as the
+   scale-visualiser's list-popover items. */
+const MODES = [
+  { id: 'ionian',     name: 'Ionian (major)' },
+  { id: 'dorian',     name: 'Dorian' },
+  { id: 'phrygian',   name: 'Phrygian' },
+  { id: 'lydian',     name: 'Lydian' },
+  { id: 'mixolydian', name: 'Mixolydian' },
+  { id: 'aeolian',    name: 'Aeolian (minor)' },
+  { id: 'locrian',    name: 'Locrian' }
+];
+state.mode = 'ionian';
+const modePop  = document.getElementById('mode-popover');
+const modePill = document.getElementById('mode-pill');
+const modeText = document.getElementById('mode-text');
+
+function syncModeDisplay() {
+  const m = MODES.find(x => x.id === state.mode);
+  if (modeText) modeText.textContent = m ? m.name.replace(/\s*\(.*\)$/, '') : '—';
+  if (modePill) modePill.setAttribute('aria-label',
+    `Mode ${m ? m.name : '—'} — open mode picker`);
+}
+syncModeDisplay();
+
+function openListPopover(popover, anchorEl, items, currentId, onPick) {
+  popover.innerHTML = '';
+  items.forEach(item => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'list-popover__item';
+    btn.setAttribute('role', 'option');
+    if (item.id === currentId) btn.setAttribute('aria-selected', 'true');
+    btn.textContent = item.name;
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      onPick(item.id);
+      closeListPopover(popover, anchorEl);
+    });
+    popover.appendChild(btn);
+  });
+  // Position — fixed, centred on the anchor. Default below; flips
+  // above if there's not enough room (or anchor opts in via
+  // data-placement="above").
+  const r = anchorEl.getBoundingClientRect();
+  popover.style.visibility = 'hidden';
+  popover.classList.add('is-open');
+  const pw = popover.offsetWidth;
+  const ph = popover.offsetHeight;
+  let left = r.left + r.width / 2 - pw / 2;
+  left = Math.max(8, Math.min(left, window.innerWidth - pw - 8));
+  const forceAbove = anchorEl.dataset.placement === 'above';
+  const roomBelow = window.innerHeight - r.bottom - 8;
+  const placeAbove = forceAbove || (ph > roomBelow && r.top > ph + 8);
+  const top = placeAbove ? (r.top - ph - 6) : (r.bottom + 6);
+  popover.style.left = left + 'px';
+  popover.style.top  = top + 'px';
+  popover.style.visibility = '';
+  anchorEl.setAttribute('aria-expanded', 'true');
+}
+function closeListPopover(popover, anchorEl) {
+  popover.classList.remove('is-open');
+  if (anchorEl) anchorEl.setAttribute('aria-expanded', 'false');
+}
+
+function setMode(id) {
+  state.mode = id;
+  syncModeDisplay();
+}
+
+if (modePill) {
+  modePill.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (modePop.classList.contains('is-open')) {
+      closeListPopover(modePop, modePill);
+    } else {
+      openListPopover(modePop, modePill, MODES, state.mode, setMode);
+    }
+  });
+}
+
+// Click-outside, scroll, resize, and Escape all dismiss the mode popover.
+document.addEventListener('click', (e) => {
+  if (!modePop.contains(e.target) && e.target !== modePill && !modePill.contains(e.target)) {
+    closeListPopover(modePop, modePill);
+  }
+});
+window.addEventListener('resize', () => closeListPopover(modePop, modePill));
+window.addEventListener('scroll', () => closeListPopover(modePop, modePill), true);
+
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  if (!keyModal.hidden) closeKeyModal();
+  else if (modePop.classList.contains('is-open')) closeListPopover(modePop, modePill);
+});
+
+/* ── BPM pill — hybrid dropdown + typed input ────────────────────
+   Lifted from scale-visualiser. Caret on the right opens a
+   list-popover of common practice tempos; the <input> on the left
+   accepts any value 40–300. The transport reads bpmState live on
+   every tick. */
+const BPM_MIN = 40;
+const BPM_MAX = 300;
+const BPM_OPTIONS = [40,50,60,70,80,90,100,110,120,130,140,150,160,180,200,220,240,260,280,300]
+  .map(n => ({ id: n, name: String(n) }));
+let bpmState = 120;
+const bpmInput = document.getElementById('bpm-value');
+const bpmCaret = document.getElementById('bpm-caret');
+const bpmPop   = document.getElementById('bpm-popover');
+
+function commitBpm() {
+  const v = parseInt(bpmInput.value, 10);
+  if (Number.isFinite(v) && v >= BPM_MIN && v <= BPM_MAX) {
+    bpmState = v;
+  }
+  bpmInput.value = bpmState;
+}
+function setBpm(n) {
+  bpmState = n;
+  bpmInput.value = n;
+}
+if (bpmInput) {
+  bpmInput.addEventListener('input', () => {
+    bpmInput.value = bpmInput.value.replace(/[^\d]/g, '').slice(0, 3);
+  });
+  bpmInput.addEventListener('blur', commitBpm);
+  bpmInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter')  { e.preventDefault(); bpmInput.blur(); }
+    if (e.key === 'Escape') { bpmInput.value = bpmState; bpmInput.blur(); }
+  });
+  bpmInput.addEventListener('focus', () => bpmInput.select());
+}
+if (bpmCaret) {
+  bpmCaret.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (bpmCaret.getAttribute('aria-expanded') === 'true') {
+      closeListPopover(bpmPop, bpmCaret);
+    } else {
+      closeListPopover(modePop, modePill);
+      openListPopover(bpmPop, bpmCaret, BPM_OPTIONS, bpmState, setBpm);
+    }
+  });
+}
+/* Click-outside / scroll / resize / Escape dismissal for the BPM popover. */
+document.addEventListener('click', (e) => {
+  if (!bpmPop.contains(e.target) && e.target !== bpmCaret && !bpmCaret.contains(e.target)) {
+    closeListPopover(bpmPop, bpmCaret);
+  }
+});
+window.addEventListener('resize', () => closeListPopover(bpmPop, bpmCaret));
+window.addEventListener('scroll', () => closeListPopover(bpmPop, bpmCaret), true);
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && bpmPop.classList.contains('is-open')) closeListPopover(bpmPop, bpmCaret);
+});
+
+function chordBadge(name, root, quality) {
+  const col = COL[root];
+  const text = tc(root);
+  const W = 76, H = 64;
+  const renderW = 56, renderH = 48;
+  const cx = W/2, cy = H/2;
+  const cellH = 53;
+  const yTop = cy - cellH/2;
+  const yBot = cy + cellH/2;
+  const shadow = 'filter: drop-shadow(0 1px 2px rgba(0,0,0,0.18))';
+
+  if (quality === 'major') {
+    const wB = 28.5, wT = 19.5;
+    const pts = `${cx-wB},${yBot} ${cx+wB},${yBot} ${cx+wT},${yTop} ${cx-wT},${yTop}`;
+    return `<svg width="${renderW}" height="${renderH}" viewBox="0 0 ${W} ${H}" style="display:block; ${shadow}">
+      <polygon points="${pts}" fill="${col}" stroke="white" stroke-width="1.5"/>
+      <text x="${cx}" y="${cy+1}" text-anchor="middle" dominant-baseline="middle"
+        font-family="Nunito" font-size="20" font-weight="800" fill="${text}">${name}</text>
+    </svg>`;
+  }
+  if (quality === 'minor') {
+    const wB = 26, wT = 39;
+    const pts = `${cx-wB},${yBot} ${cx+wB},${yBot} ${cx+wT},${yTop} ${cx-wT},${yTop}`;
+    return `<svg width="${renderW}" height="${renderH}" viewBox="0 0 ${W} ${H}" style="display:block; ${shadow}">
+      <polygon points="${pts}" fill="${col}" stroke="white" stroke-width="1.5"/>
+      <text x="${cx}" y="${cy+1}" text-anchor="middle" dominant-baseline="middle"
+        font-family="Nunito" font-size="18" font-weight="800" fill="${text}">${name}</text>
+    </svg>`;
+  }
+  const r = 25;
+  return `<svg width="${renderW}" height="${renderH}" viewBox="0 0 ${W} ${H}" style="display:block; ${shadow}">
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="${col}" stroke="white" stroke-width="1.5"/>
+    <text x="${cx}" y="${cy+1}" text-anchor="middle" dominant-baseline="middle"
+      font-family="Nunito" font-size="16" font-weight="800" fill="${text}">${name}</text>
+  </svg>`;
+}
+
+function fretboardDiagram(chord, opts) {
+  const numStrings = chord.strings.length;
+  const numFrets = opts.frets || 4;
+  const startFret = opts.startFret || 0;
+  /* Default 3 wound strings (low E, A, D on guitar). Override for uke. */
+  const woundCount = opts.wound !== undefined ? opts.wound : 3;
+  const W = opts.W || 175, H = opts.H || 160;
+  const padTop = 22, padBot = 12, padX = 22;
+  const fbW = W - padX*2;
+  const fbH = H - padTop - padBot;
+  const fretH = fbH / numFrets;
+  const stringW = fbW / (numStrings - 1);
+  const id = 'fb' + Math.random().toString(36).slice(2, 8);
+
+  let svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">
+    <defs>
+      <linearGradient id="${id}-base" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%"   stop-color="#5E2F11"/>
+        <stop offset="100%" stop-color="#4A2308"/>
+      </linearGradient>
+      <linearGradient id="${id}-fret" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%"   stop-color="#E8E8E8"/>
+        <stop offset="35%"  stop-color="#FAFAFA"/>
+        <stop offset="55%"  stop-color="#9C9C9C"/>
+        <stop offset="100%" stop-color="#6A6A6A"/>
+      </linearGradient>
+      <linearGradient id="${id}-nut" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%"   stop-color="#F8F0DC"/>
+        <stop offset="100%" stop-color="#D4C5A8"/>
+      </linearGradient>
+      <clipPath id="${id}-clip"><rect x="${padX}" y="${padTop}" width="${fbW}" height="${fbH}"/></clipPath>
+    </defs>`;
+
+  svg += `<g clip-path="url(#${id}-clip)">`;
+  svg += `<rect x="${padX}" y="${padTop}" width="${fbW}" height="${fbH}" fill="url(#${id}-base)"/>`;
+
+  const grainLines = [
+    { x: 0.10, amp: 10, col: '#3A1B07', op: 0.55, w: 0.65 },
+    { x: 0.26, amp: 13, col: '#2E1407', op: 0.50, w: 0.55 },
+    { x: 0.42, amp: 11, col: '#1F0D04', op: 0.55, w: 0.75 },
+    { x: 0.58, amp: 9,  col: '#3A1B07', op: 0.45, w: 0.55 },
+    { x: 0.74, amp: 13, col: '#2E1407', op: 0.50, w: 0.65 },
+    { x: 0.90, amp: 10, col: '#1F0D04', op: 0.50, w: 0.65 },
+  ];
+  grainLines.forEach((g, i) => {
+    const xBase = padX + g.x * fbW;
+    const y0 = padTop;
+    const y1 = padTop + fbH;
+    const seed = i * 1.7;
+    const cy1 = y0 + fbH*0.25;
+    const cy2 = y0 + fbH*0.75;
+    const cx1 = xBase + Math.sin(seed) * g.amp;
+    const cx2 = xBase + Math.sin(seed + 2.3) * g.amp;
+    const xEnd = xBase + Math.sin(seed + 4.1) * (g.amp * 0.4);
+    svg += `<path d="M${xBase},${y0} C${cx1},${cy1} ${cx2},${cy2} ${xEnd},${y1}"
+      stroke="${g.col}" stroke-width="${g.w}" fill="none" opacity="${g.op}"
+      stroke-linecap="round"/>`;
+  });
+  svg += `</g>`;
+
+  [3, 5, 7].forEach(f => {
+    const localFret = f - startFret;
+    if (localFret > 0 && localFret <= numFrets) {
+      const y = padTop + (localFret - 0.5) * fretH;
+      svg += `<circle cx="${padX + fbW/2}" cy="${y}" r="2.8" fill="#E8DCC8" opacity="0.85"/>`;
+    }
+  });
+
+  for (let f = 0; f <= numFrets; f++) {
+    const y = padTop + f * fretH;
+    if (f === 0 && startFret === 0) {
+      svg += `<rect x="${padX-2}" y="${y-2}" width="${fbW+4}" height="4"
+        fill="url(#${id}-nut)" stroke="#1A1A1A" stroke-width="0.4"/>`;
+    } else {
+      svg += `<rect x="${padX-2}" y="${y-1.4}" width="${fbW+4}" height="2.8"
+        fill="url(#${id}-fret)" stroke="#3A3A3A" stroke-width="0.3"/>`;
+    }
+  }
+
+  chord.strings.forEach((s, i) => {
+    const x = padX + i * stringW;
+    const lowness = numStrings - i - 1;
+    const isWound = i < woundCount;
+    const thickness = isWound ? 1.4 + lowness * 0.16 : 0.95 + lowness * 0.09;
+    const colour    = isWound ? '#5A5A5A' : '#A0A0A0';
+    svg += `<line x1="${x}" y1="${padTop}" x2="${x}" y2="${padTop + fbH}"
+      stroke="${colour}" stroke-width="${thickness}" stroke-linecap="round"/>`;
+  });
+
+  chord.strings.forEach((s, i) => {
+    const x = padX + i * stringW;
+    const y = padTop - 11;
+    if (s.fret === 'x') {
+      svg += `<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="middle"
+        font-family="Nunito" font-size="12" font-weight="800" fill="#5A5A5A">×</text>`;
+    } else if (s.fret === 0) {
+      const note = s.noteName;
+      svg += `<circle cx="${x}" cy="${y}" r="8" fill="white"
+        stroke="${COL[note]}" stroke-width="1.5"/>`;
+      svg += `<text x="${x}" y="${y+0.3}" text-anchor="middle" dominant-baseline="middle"
+        font-family="Nunito" font-size="8" font-weight="800" fill="#1A1A1A">${note}</text>`;
+    }
+  });
+
+  chord.strings.forEach((s, i) => {
+    if (typeof s.fret === 'number' && s.fret > 0) {
+      const x = padX + i * stringW;
+      const localFret = s.fret - startFret;
+      const y = padTop + (localFret - 0.5) * fretH;
+      const note = s.noteName;
+      svg += `<circle cx="${x}" cy="${y}" r="9.5" fill="${COL[note]}"
+        stroke="white" stroke-width="1.5"/>`;
+      svg += `<text x="${x}" y="${y+0.3}" text-anchor="middle" dominant-baseline="middle"
+        font-family="Nunito" font-size="8.5" font-weight="800" fill="${tc(note)}">${note}</text>`;
+    }
+  });
+
+  svg += `</svg>`;
+  return svg;
+}
+
+/* ── Piano renderer (adapted from chord-card-v10) ────────────────
+   Lights up the chord notes on a C → G(+1) keyboard. Notes spec:
+   { sem, name } where sem = semitone offset from leftmost C. */
+function pianoDiagram(chord) {
+  const whites = [
+    { idx:0,  sem:0,  name:'C' },  { idx:1,  sem:2,  name:'D' },
+    { idx:2,  sem:4,  name:'E' },  { idx:3,  sem:5,  name:'F' },
+    { idx:4,  sem:7,  name:'G' },  { idx:5,  sem:9,  name:'A' },
+    { idx:6,  sem:11, name:'B' },  { idx:7,  sem:12, name:'C' },
+    { idx:8,  sem:14, name:'D' },  { idx:9,  sem:16, name:'E' },
+    { idx:10, sem:17, name:'F' },  { idx:11, sem:19, name:'G' },
+  ];
+  const blacks = [
+    { afterIdx:0,  sem:1,  pc:'Db' }, { afterIdx:1,  sem:3,  pc:'Eb' },
+    { afterIdx:3,  sem:6,  pc:'F#' }, { afterIdx:4,  sem:8,  pc:'Ab' },
+    { afterIdx:5,  sem:10, pc:'Bb' }, { afterIdx:7,  sem:13, pc:'Db' },
+    { afterIdx:8,  sem:15, pc:'Eb' }, { afterIdx:10, sem:18, pc:'F#' },
+  ];
+
+  const W = 240, H = 140;
+  const wKey = W / whites.length;
+  const bKey = wKey * 0.62;
+  const bH   = H * 0.62;
+
+  const litMap = {};
+  chord.notes.forEach(n => { litMap[n.sem] = { name: n.name, pcKey: n.name }; });
+
+  /* Use width:100%; height:auto so the keyboard fills the diagram cell.
+     viewBox preserves aspect; max-height caps if cell is short. */
+  let svg = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet"
+    style="width:100%; height:auto; max-height:100%;">`;
+
+  whites.forEach(w => {
+    const x = w.idx * wKey;
+    const litInfo = litMap[w.sem];
+    if (litInfo) {
+      const pc = litInfo.pcKey;
+      svg += `<rect x="${x}" y="0" width="${wKey}" height="${H}" rx="2"
+        fill="${COL[pc]}" stroke="${COL[pc]}" stroke-width="1"/>`;
+      svg += `<text x="${x + wKey/2}" y="${H - 13}" text-anchor="middle" dominant-baseline="middle"
+        font-family="Nunito" font-size="11" font-weight="800" fill="${tc(pc)}">${litInfo.name}</text>`;
+    } else {
+      svg += `<rect x="${x}" y="0" width="${wKey}" height="${H}" rx="2"
+        fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1"/>`;
+    }
+  });
+
+  blacks.forEach(b => {
+    const x = (b.afterIdx + 1) * wKey - bKey/2;
+    const litInfo = litMap[b.sem];
+    if (litInfo) {
+      const pc = litInfo.pcKey;
+      svg += `<rect x="${x}" y="0" width="${bKey}" height="${bH}" rx="1.5"
+        fill="${COL[pc]}" stroke="#0E0E0E" stroke-width="1"/>`;
+      svg += `<text x="${x + bKey/2}" y="${bH - 10}" text-anchor="middle" dominant-baseline="middle"
+        font-family="Nunito" font-size="9" font-weight="800" fill="${tc(pc)}">${litInfo.name}</text>`;
+    } else {
+      svg += `<rect x="${x}" y="0" width="${bKey}" height="${bH}" rx="1.5"
+        fill="#1A1A1A" stroke="#0E0E0E" stroke-width="1"/>`;
+    }
+  });
+
+  svg += `</svg>`;
+  return svg;
+}
+
+/* ── Guitar fingerings (E A D G B e) ────────────────────────── */
+const G_C    = { strings: [{ fret: 'x', noteName: null }, { fret: 3, noteName: 'C' }, { fret: 2, noteName: 'E' }, { fret: 0, noteName: 'G' }, { fret: 1, noteName: 'C' }, { fret: 0, noteName: 'E' }] };
+const G_DM   = { strings: [{ fret: 'x', noteName: null }, { fret: 'x', noteName: null }, { fret: 0, noteName: 'D' }, { fret: 2, noteName: 'A' }, { fret: 3, noteName: 'D' }, { fret: 1, noteName: 'F' }] };
+const G_EM   = { strings: [{ fret: 0, noteName: 'E' }, { fret: 2, noteName: 'B' }, { fret: 2, noteName: 'E' }, { fret: 0, noteName: 'G' }, { fret: 0, noteName: 'B' }, { fret: 0, noteName: 'E' }] };
+const G_F    = { strings: [{ fret: 'x', noteName: null }, { fret: 'x', noteName: null }, { fret: 3, noteName: 'F' }, { fret: 2, noteName: 'A' }, { fret: 1, noteName: 'C' }, { fret: 1, noteName: 'F' }] };
+const G_G    = { strings: [{ fret: 3, noteName: 'G' }, { fret: 2, noteName: 'B' }, { fret: 0, noteName: 'D' }, { fret: 0, noteName: 'G' }, { fret: 0, noteName: 'B' }, { fret: 3, noteName: 'G' }] };
+const G_AM   = { strings: [{ fret: 'x', noteName: null }, { fret: 0, noteName: 'A' }, { fret: 2, noteName: 'E' }, { fret: 2, noteName: 'A' }, { fret: 1, noteName: 'C' }, { fret: 0, noteName: 'E' }] };
+const G_BDIM = { strings: [{ fret: 'x', noteName: null }, { fret: 2, noteName: 'B' }, { fret: 3, noteName: 'F' }, { fret: 4, noteName: 'B' }, { fret: 3, noteName: 'D' }, { fret: 'x', noteName: null }] };
+
+/* ── Ukulele fingerings (standard tuning G C E A) ──────────── */
+const U_C    = { strings: [{ fret: 0, noteName: 'G' }, { fret: 0, noteName: 'C' }, { fret: 0, noteName: 'E' }, { fret: 3, noteName: 'C' }] };
+const U_DM   = { strings: [{ fret: 2, noteName: 'A' }, { fret: 2, noteName: 'D' }, { fret: 1, noteName: 'F' }, { fret: 0, noteName: 'A' }] };
+const U_EM   = { strings: [{ fret: 0, noteName: 'G' }, { fret: 4, noteName: 'E' }, { fret: 3, noteName: 'G' }, { fret: 2, noteName: 'B' }] };
+const U_F    = { strings: [{ fret: 2, noteName: 'A' }, { fret: 0, noteName: 'C' }, { fret: 1, noteName: 'F' }, { fret: 0, noteName: 'A' }] };
+const U_G    = { strings: [{ fret: 0, noteName: 'G' }, { fret: 2, noteName: 'D' }, { fret: 3, noteName: 'G' }, { fret: 2, noteName: 'B' }] };
+const U_AM   = { strings: [{ fret: 2, noteName: 'A' }, { fret: 0, noteName: 'C' }, { fret: 0, noteName: 'E' }, { fret: 0, noteName: 'A' }] };
+const U_BDIM = { strings: [{ fret: 4, noteName: 'B' }, { fret: 2, noteName: 'D' }, { fret: 1, noteName: 'F' }, { fret: 2, noteName: 'B' }] };
+
+/* ── Piano voicings (sem = semitone offset from leftmost C) ── */
+const P_C    = { notes: [{ sem: 0,  name: 'C' }, { sem: 4,  name: 'E' }, { sem: 7,  name: 'G' }] };
+const P_DM   = { notes: [{ sem: 2,  name: 'D' }, { sem: 5,  name: 'F' }, { sem: 9,  name: 'A' }] };
+const P_EM   = { notes: [{ sem: 4,  name: 'E' }, { sem: 7,  name: 'G' }, { sem: 11, name: 'B' }] };
+const P_F    = { notes: [{ sem: 5,  name: 'F' }, { sem: 9,  name: 'A' }, { sem: 12, name: 'C' }] };
+const P_G    = { notes: [{ sem: 7,  name: 'G' }, { sem: 11, name: 'B' }, { sem: 14, name: 'D' }] };
+const P_AM   = { notes: [{ sem: 9,  name: 'A' }, { sem: 12, name: 'C' }, { sem: 16, name: 'E' }] };
+const P_BDIM = { notes: [{ sem: 11, name: 'B' }, { sem: 14, name: 'D' }, { sem: 17, name: 'F' }] };
+
+const CHORD = {
+  'I':    { name:'C',  root:'C', quality:'major', numeral:'I',    notes:['C','E','G'], guitar:G_C,    uke:U_C,    piano:P_C,    home:true  },
+  'ii':   { name:'Dm', root:'D', quality:'minor', numeral:'ii',   notes:['D','F','A'], guitar:G_DM,   uke:U_DM,   piano:P_DM,   home:false },
+  'iii':  { name:'Em', root:'E', quality:'minor', numeral:'iii', notes:['E','G','B'], guitar:G_EM,   uke:U_EM,   piano:P_EM,   home:false },
+  'IV':   { name:'F',  root:'F', quality:'major', numeral:'IV',   notes:['F','A','C'], guitar:G_F,    uke:U_F,    piano:P_F,    home:false },
+  'V':    { name:'G',  root:'G', quality:'major', numeral:'V',    notes:['G','B','D'], guitar:G_G,    uke:U_G,    piano:P_G,    home:false },
+  'vi':   { name:'Am', root:'A', quality:'minor', numeral:'vi',  notes:['A','C','E'], guitar:G_AM,   uke:U_AM,   piano:P_AM,   home:false },
+  'vii°': { name:'B°', root:'B', quality:'dim',   numeral:'vii°', notes:['B','D','F'], guitar:G_BDIM, uke:U_BDIM, piano:P_BDIM, home:false },
+};
+
+const STATE = {
+  'I':    'now',
+  'ii':   'inert',
+  'iii':  'inert',
+  'IV':   'next',
+  'V':    'inert',
+  'vi':   'inert',
+  'vii°': 'off',
+};
+
+function noteCircles(notes) {
+  return notes.map(n =>
+    `<div class="note-circle" style="background:${COL[n]};color:${tc(n)}">${n}</div>`
+  ).join('');
+}
+
+function buildCard(key) {
+  const chord = CHORD[key];
+  const state = STATE[key];
+  const chordCol = COL[chord.root];
+
+  let stateClass = '';
+  if (state === 'inert') stateClass = 'state-inert';
+  else if (state === 'off') stateClass = 'state-off';
+
+  const homeClass = chord.home ? 'is-home' : '';
+
+  let shadow = '0 2px 10px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.04)';
+  let transform = '';
+  if (state === 'next') {
+    shadow = `0 0 0 2px ${chordCol}, 0 2px 8px rgba(0,0,0,0.06)`;
+  } else if (state === 'now') {
+    shadow = [
+      `0 0 0 4px ${chordCol}`,
+      `0 0 0 5.5px #FFFFFF`,
+      `0 0 0 6.5px rgba(0,0,0,0.18)`,
+      `0 12px 28px ${hexToRgba(chordCol, 0.40)}`,
+      `0 2px 6px rgba(0,0,0,0.08)`
+    ].join(', ');
+    transform = 'translateY(-2px)';
+  }
+
+  const cssVars = `--chord-color:${chordCol}; --chord-color-glow:${hexToRgba(chordCol, 0.42)};`;
+
+  return `
+    <div class="card ${stateClass} ${homeClass}"
+         style="box-shadow:${shadow}; transform:${transform}; ${cssVars}"
+         data-chord="${key}">
+      <div class="card-head">
+        ${chordBadge(chord.name, chord.root, chord.quality)}
+        <div class="numeral">${chord.numeral}</div>
+      </div>
+      <div class="diagram">${diagramFor(chord)}</div>
+      <div class="notes">${noteCircles(chord.notes)}</div>
+    </div>
+  `;
+}
+
+/* Active instrument — switched from the Instrument settings tab */
+let currentInstrument = 'guitar';
+
+function diagramFor(chord) {
+  if (currentInstrument === 'piano') return pianoDiagram(chord.piano);
+  if (currentInstrument === 'uke')   return fretboardDiagram(chord.uke,    { frets: 4, startFret: 0, wound: 0, W: 140, H: 160 });
+  return                                    fretboardDiagram(chord.guitar, { frets: 4, startFret: 0, wound: 3 });
+}
+
+const CARD_KEYS = ['ii','vi','iii','vii°','IV','I','V'];
+const CARD_IDS  = { 'ii':'cell-ii', 'vi':'cell-vi', 'iii':'cell-iii', 'vii°':'cell-vii', 'IV':'cell-IV', 'I':'cell-I', 'V':'cell-V' };
+
+function renderCards() {
+  CARD_KEYS.forEach(k => { document.getElementById(CARD_IDS[k]).innerHTML = buildCard(k); });
+}
+
+renderCards();
+
+const CHORD_ORDER = ['I','ii','iii','IV','V','vi','vii°'];
+const CHORD_OFF_DEFAULT = new Set(['vii°']);
+const chordsHost = document.querySelector('.sview-chords');
+chordsHost.innerHTML = CHORD_ORDER.map(k => {
+  const c = CHORD[k];
+  const off = CHORD_OFF_DEFAULT.has(k);
+  return `
+    <div class="chord-row ${off ? 'is-off' : 'is-on'}" data-key="${k}">
+      <span class="num">${c.numeral}</span>
+      <span class="lbl">${c.name}</span>
+      <button type="button" class="toggle" aria-pressed="${!off}"></button>
+    </div>
+  `;
+}).join('');
+document.querySelectorAll('.chord-row').forEach(row => {
+  row.addEventListener('click', () => {
+    const on = row.classList.toggle('is-on');
+    row.classList.toggle('is-off', !on);
+    const t = row.querySelector('.toggle');
+    t.setAttribute('aria-pressed', String(on));
+  });
+});
+
+const VIEWS = ['tempo', 'prog', 'opts', 'inst', 'drill', 'chords', 'kmode'];
+const VIEW_TITLES = {
+  tempo:  'Tempo',
+  prog:   'Progression',
+  opts:   'Options',
+  inst:   'Instrument',
+  drill:  'Drill mode',
+  chords: 'Chords',
+  kmode:  'Key & Mode',
+};
+let viewIdx = 0;
+
+function showView(idx) {
+  viewIdx = (idx + VIEWS.length) % VIEWS.length;
+  const target = VIEWS[viewIdx];
+  document.querySelectorAll('.sview').forEach(v => v.classList.remove('is-on'));
+  document.querySelector(`.sview[data-view="${target}"]`).classList.add('is-on');
+  document.getElementById('settings-title').textContent = VIEW_TITLES[target];
+}
+
+document.getElementById('settings-prev').addEventListener('click', () => showView(viewIdx - 1));
+document.getElementById('settings-next').addEventListener('click', () => showView(viewIdx + 1));
+document.getElementById('kmode-pill').addEventListener('click', () => showView(VIEWS.indexOf('kmode')));
+
+document.querySelectorAll('.stack').forEach(group => {
+  /* Instrument selector also re-renders the chord cards in the chosen layout. */
+  const isInstrumentStack = group.closest('.sview-inst') !== null;
+  const INSTRUMENTS = ['guitar', 'piano', 'uke'];
+
+  group.querySelectorAll('button').forEach((btn, idx) => {
+    btn.addEventListener('click', () => {
+      group.querySelectorAll('button').forEach(b => {
+        b.classList.remove('active');
+        b.setAttribute('aria-selected', 'false');
+      });
+      btn.classList.add('active');
+      btn.setAttribute('aria-selected', 'true');
+
+      if (isInstrumentStack) {
+        currentInstrument = INSTRUMENTS[idx] || 'guitar';
+        renderCards();
+      }
+    });
+  });
+});
+
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.removeAttribute('aria-current'));
+    tab.setAttribute('aria-current', 'page');
+  });
+});
+
+/* ════════════════════════════════════════════════════════════════
+   Transport — visual playback (no audio in Build 1).
+   ────────────────────────────────────────────────────────────────
+   Per beat: cycles the beat segments + counter and fires a one-shot
+   pulse animation on the current "now" card (dropshadow blooms +
+   chord-coloured ring thickens). Per bar: advances STATE so the
+   next progression chord becomes "now" and the chord after becomes
+   "next", then re-renders the grid; .bar.is-active moves with it.
+
+   BPM read live from the .bpm__num span on every tick so tempo
+   changes (when wired) take effect on the next beat. 4/4 hardcoded.
+   ──────────────────────────────────────────────────────────────── */
+const transport = (function() {
+  const BEATS_PER_BAR = 4;
+
+  let timer = null;
+  let beat  = 0;     /* 0-based within the bar */
+  let barIx = 0;     /* index into progressionBars */
+
+  function getProgressionBars() {
+    return Array.from(document.querySelectorAll('.sview-prog .bar'));
+  }
+  function getPlayBtn() {
+    return document.querySelector('.sview-tempo .play-btn');
+  }
+  function readBpm() {
+    /* .bpm__num is now an <input> (hybrid pill) so read its .value
+       rather than textContent. Fallback to the bpmState variable
+       if the input isn't there or parse fails. */
+    const el = document.querySelector('.sview-tempo .bpm__num');
+    const raw = el ? (el.value != null ? el.value : el.textContent) : '';
+    const v = parseInt(raw, 10);
+    if (Number.isFinite(v) && v >= 20 && v <= 400) return v;
+    return (typeof bpmState === 'number') ? bpmState : 120;
+  }
+  function beatMs() { return 60000 / readBpm(); }
+
+  function setPlayIcon(running) {
+    const btn = getPlayBtn();
+    if (!btn) return;
+    btn.classList.toggle('is-running', running);
+    btn.setAttribute('aria-label', running ? 'Pause drill' : 'Start drill');
+    btn.innerHTML = running
+      ? `<svg viewBox="0 0 18 18" aria-hidden="true">
+           <rect x="4" y="3" width="3.4" height="12" rx="0.8" fill="currentColor"/>
+           <rect x="10.6" y="3" width="3.4" height="12" rx="0.8" fill="currentColor"/>
+         </svg>`
+      : `<svg viewBox="0 0 18 18" aria-hidden="true">
+           <path d="M5 3v12l10-6z" fill="currentColor"/>
+         </svg>`;
+  }
+
+  function paintBeatSegs() {
+    const segs = document.querySelectorAll('.sview-tempo .beat__seg');
+    segs.forEach((el, i) => {
+      const beatNum = i + 1;
+      const lit = beatNum <= (beat + 1);
+      el.classList.toggle('is-on',  lit && beatNum !== 1);
+      el.classList.toggle('is-one', beatNum === 1 && lit);
+    });
+    const counterEl = document.querySelector('.sview-tempo .beat__counter');
+    if (counterEl) {
+      counterEl.innerHTML =
+        'Bar <b>' + (barIx + 1) + '</b>/<b>' + getProgressionBars().length + '</b> · Beat <b>' + (beat + 1) + '</b>';
+    }
+  }
+
+  function resetBeatSegs() {
+    document.querySelectorAll('.sview-tempo .beat__seg').forEach((el, i) => {
+      el.classList.remove('is-on');
+      el.classList.toggle('is-one', i === 0);
+    });
+    const counterEl = document.querySelector('.sview-tempo .beat__counter');
+    if (counterEl) counterEl.innerHTML = 'Bar <b>1</b>/<b>4</b> · Beat <b>1</b>';
+  }
+
+  function pulseNowCard() {
+    /* "now" carries no class — buildCard styles it inline. We
+       address the active card by its data-chord attribute. */
+    const card = document.querySelector('.card[data-chord="' + currentChord() + '"]');
+    if (!card) return;
+    /* Force a single-frame remove/reflow/add so the animation
+       restarts cleanly on every beat. */
+    card.classList.remove('is-beat-pulse');
+    void card.offsetWidth;
+    card.style.setProperty('--beat-ms', beatMs() + 'ms');
+    card.classList.add('is-beat-pulse');
+  }
+
+  function currentChord() {
+    const bars = getProgressionBars();
+    if (!bars.length) return 'I';
+    return bars[barIx].dataset.chord || 'I';
+  }
+  function nextChord() {
+    const bars = getProgressionBars();
+    if (!bars.length) return 'I';
+    return bars[(barIx + 1) % bars.length].dataset.chord || 'I';
+  }
+
+  function advanceBar() {
+    const bars = getProgressionBars();
+    if (!bars.length) return;
+    barIx = (barIx + 1) % bars.length;
+    bars.forEach((b, i) => b.classList.toggle('is-active', i === barIx));
+    Object.keys(STATE).forEach(k => {
+      if (STATE[k] === 'off') return;
+      STATE[k] = 'inert';
+    });
+    /* Order matters when the next bar repeats the current chord
+       (e.g. bar 4 → bar 1 both = I): set "next" first so "now"
+       wins on the same key. */
+    STATE[nextChord()]    = 'next';
+    STATE[currentChord()] = 'now';
+    renderCards();
+  }
+
+  function applyInitialState() {
+    const bars = getProgressionBars();
+    bars.forEach((b, i) => b.classList.toggle('is-active', i === barIx));
+    Object.keys(STATE).forEach(k => {
+      if (STATE[k] === 'off') return;
+      STATE[k] = 'inert';
+    });
+    STATE[nextChord()]    = 'next';
+    STATE[currentChord()] = 'now';
+    renderCards();
+  }
+
+  function tick() {
+    paintBeatSegs();
+    pulseNowCard();
+    beat += 1;
+    if (beat >= BEATS_PER_BAR) {
+      beat = 0;
+      advanceBar();
+    }
+    timer = setTimeout(tick, beatMs());
+  }
+
+  function start() {
+    if (timer) return;
+    beat = 0; barIx = 0;
+    applyInitialState();
+    setPlayIcon(true);
+    tick();
+  }
+  function stop() {
+    if (timer) { clearTimeout(timer); timer = null; }
+    setPlayIcon(false);
+    resetBeatSegs();
+    document.querySelectorAll('.card.is-beat-pulse').forEach(el => el.classList.remove('is-beat-pulse'));
+  }
+
+  return {
+    start, stop,
+    get running() { return timer != null; },
+  };
+})();
+
+document.addEventListener('click', (e) => {
+  const playBtn = e.target.closest('.play-btn');
+  if (!playBtn) return;
+  if (transport.running) transport.stop();
+  else transport.start();
+});
+
+/* ── Chat trigger — pulse-once per session, panel toggle ────── */
+(function() {
+  const trigger  = document.getElementById('chat-trigger');
+  const panel    = document.getElementById('chat-panel');
+  const scrim    = document.getElementById('chat-scrim');
+  const closeBtn = document.getElementById('chat-close');
+  if (!trigger || !panel) return;
+
+  if (!sessionStorage.getItem('tom-chat-pulsed')) {
+    requestAnimationFrame(() => {
+      trigger.classList.add('is-pulsing');
+      sessionStorage.setItem('tom-chat-pulsed', '1');
+    });
+    trigger.addEventListener('animationend', () => {
+      trigger.classList.remove('is-pulsing');
+    }, { once: true });
+  }
+
+  function open()  { panel.classList.add('is-open');    scrim.classList.add('is-open');    trigger.setAttribute('aria-expanded','true');  panel.setAttribute('aria-hidden','false'); scrim.setAttribute('aria-hidden','false'); }
+  function close() { panel.classList.remove('is-open'); scrim.classList.remove('is-open'); trigger.setAttribute('aria-expanded','false'); panel.setAttribute('aria-hidden','true');  scrim.setAttribute('aria-hidden','true');  }
+  trigger.addEventListener('click', () => panel.classList.contains('is-open') ? close() : open());
+  closeBtn.addEventListener('click', close);
+  scrim.addEventListener('click', close);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && panel.classList.contains('is-open')) close(); });
+})();
+</script>
+
+  <!-- tom-shell.js removed for portfolio embed: it injected an XP pop-out that
+       pulled in tom-xp.css (not bundled), leaking unstyled content into the frame. -->
+
+</body>
+</html>

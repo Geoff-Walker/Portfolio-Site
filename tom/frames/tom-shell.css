@@ -1,0 +1,520 @@
+/* ────────────────────────────────────────────────────────────────
+   Tom — Shell Components
+   The persistent chrome that wraps every screen: header (two
+   variants), bottom tab bar, and right-edge chat trigger + panel.
+
+   Pairs with tom-tokens.css. Per-screen styles live in their own
+   file or inline <style> — they consume tokens here, never override
+   shell layout.
+   ──────────────────────────────────────────────────────────────── */
+
+/* ── App container ─────────────────────────────────────────────── */
+.app {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  position: relative;
+  background: var(--surface);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   HEADER — two variants
+   ────────────────────────────────────────────────────────────────
+   .shell-header              base 56px row, flex
+     .shell-header--landing   brand-mark + wordmark + spacer + right slot
+     .shell-header--sub       back-chev + centred identity + right slot
+
+   Right slot is always the .xp-pill on every screen — gamification
+   visible everywhere.
+   ════════════════════════════════════════════════════════════════ */
+
+.shell-header {
+  flex-shrink: 0;
+  height: var(--header-h);
+  background: var(--surface);
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 30;
+  position: relative;
+}
+
+/* Sub-screen header uses a 1fr auto 1fr grid so the centre cluster sits
+   at true viewport centre regardless of the back-chev / right-slot
+   width difference. Flex-based centring fails when left and right
+   children have different widths — the leftover space is asymmetric. */
+.shell-header--sub {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+}
+.shell-header--sub > .back-chev { justify-self: start; }
+.shell-header--sub > .xp-pill   { justify-self: end; }
+
+/* Brand mark — the T disc. Present on landing headers only. */
+.brand-mark {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  box-shadow: 0 0 0 3px var(--surface), 0 0 0 4px var(--hairline);
+  flex-shrink: 0;
+}
+
+.wordmark {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+/* Back chevron — present on sub-screen headers, replaces brand+wordmark */
+.back-chev {
+  width: 36px; height: 36px;
+  border: 0;
+  background: transparent;
+  border-radius: 999px;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--ink);
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-left: -6px;
+}
+.back-chev:hover { background: rgba(0,0,0,0.04); }
+.back-chev svg { width: 16px; height: 16px; }
+
+/* Centred screen identity on sub-screens. Either text (.screen-title) or
+   an interactive control (.kmode-pill etc — defined in per-screen CSS). */
+.screen-identity {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-width: 0;
+}
+.screen-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.spacer { flex: 1; }
+
+/* ── XP / Lv pill — canonical right slot ─────────────────────────
+   Lifted from skills-screen-v2. Used identically on every screen. */
+.xp-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px 5px 10px;
+  background: var(--surface);
+  border: 1px solid var(--tab-border);
+  border-radius: 999px;
+  box-shadow: var(--sh-tab);
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--gold-text);
+  font-feature-settings: "tnum" 1;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.xp-pill:hover { filter: brightness(0.98); }
+.xp-bolt {
+  width: 11px; height: 11px;
+  background: var(--gold);
+  clip-path: polygon(55% 0, 0 60%, 40% 60%, 25% 100%, 100% 35%, 55% 35%);
+  display: inline-block;
+}
+.xp-pill .lvl {
+  color: var(--ink-2);
+  font-weight: 700;
+  border-left: 1px solid var(--hairline);
+  padding-left: 8px;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   BOTTOM TAB BAR
+   ────────────────────────────────────────────────────────────────
+   Floating pill, label-only, four destinations. Spec from Tom
+   Design System v1.1 §12. Pages must allow var(--nav-reserve) at
+   the bottom of their main content for clearance.
+   ════════════════════════════════════════════════════════════════ */
+
+.tabbar {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 16px;
+  width: calc(100% - 32px);
+  max-width: 420px;
+  background: var(--surface);
+  border: 1px solid var(--tab-border);
+  border-radius: 999px;
+  padding: 4px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2px;
+  z-index: 20;
+  box-shadow: var(--sh-pop);
+}
+.tabbar .tab {
+  appearance: none;
+  background: var(--surface);
+  border: 0;
+  color: var(--ink-2);
+  font-weight: 700;
+  font-size: 12px;
+  padding: 10px 6px;
+  border-radius: 999px;
+  cursor: pointer;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+}
+.tabbar .tab[aria-current="page"] {
+  background: var(--ink);
+  color: #fff;
+}
+
+@media (min-width: 768px) {
+  .tabbar { max-width: 343px; }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   CHAT TRIGGER + PANEL
+   ────────────────────────────────────────────────────────────────
+   Right-edge floating disc (Copilot-style). Tap → panel slides in
+   from right. On mobile: panel becomes a full-width bottom sheet.
+
+   The trigger is built around the brand "T" disc (placeholder for
+   Tom's eventual face) with a small speech-bubble notch indicator.
+   Pulses once per session via .chat-trigger.is-pulsing — JS sets
+   the class on first load and removes it after one cycle.
+   ════════════════════════════════════════════════════════════════ */
+
+/* ── Mood-ring system (2026-05-10) ────────────────────────────
+   Two CSS variables — --tom-avatar-image and --tom-mood-ring —
+   are set on body via [data-tom-state="X"]. They cascade into
+   the chat trigger and the chat-panel placeholder mark, swapping
+   both the avatar image AND the ring colour together. The ring
+   uses note-palette tokens (--note-X) to encode mood: warm hues
+   for celebration, cool for listening, purple for thinking, etc.
+   The face still does its work, but the ring carries the state
+   at any size — particularly important at 44px trigger size and
+   for distance / glance readability. */
+body[data-tom-state="neutral"] {
+  --tom-avatar-image: url("assets/Tom_Avatar.png");
+  --tom-mood-ring: var(--hairline);
+}
+body[data-tom-state="listening"] {
+  --tom-avatar-image: url("assets/Tom_Listening.png");
+  --tom-mood-ring: var(--note-Fs);
+}
+body[data-tom-state="encouraging"] {
+  --tom-avatar-image: url("assets/Tom_Encouraging.png");
+  --tom-mood-ring: var(--note-C);  /* orange — was celebration's colour; --note-A yellow-green was too close to gold */
+}
+body[data-tom-state="celebration"] {
+  --tom-avatar-image: url("assets/Tom_Celebration.png");
+  --tom-mood-ring: var(--gold);    /* gold ties to the existing live/completion semantic */
+}
+body[data-tom-state="thinking"] {
+  --tom-avatar-image: url("assets/Tom_Thinking_Processing.png");
+  --tom-mood-ring: var(--note-Eb);
+}
+
+/* Mood pulse — two intensities.
+   Soft pulse runs ambiently on every state to give Tom a quiet
+   "alive" cue — the ring breathes by 1px every 4 seconds. Loud
+   pulse runs on thinking + celebration to make those states
+   visibly active rather than static moods (Tom is processing,
+   Tom is celebrating — both deserve attention). Reduced-motion
+   suppresses both. */
+@keyframes tom-mood-pulse-soft {
+  0%, 100% {
+    box-shadow:
+      0 8px 20px rgba(0, 0, 0, 0.16),
+      0 2px 6px  rgba(0, 0, 0, 0.08),
+      0 0 0 3px  var(--surface),
+      0 0 0 5px  var(--tom-mood-ring);
+  }
+  50% {
+    box-shadow:
+      0 8px 20px rgba(0, 0, 0, 0.16),
+      0 2px 6px  rgba(0, 0, 0, 0.08),
+      0 0 0 3px  var(--surface),
+      0 0 0 6px  var(--tom-mood-ring);
+  }
+}
+@keyframes tom-mood-pulse-soft-flat {
+  0%, 100% {
+    box-shadow:
+      0 0 0 3px var(--surface),
+      0 0 0 6px var(--tom-mood-ring);
+  }
+  50% {
+    box-shadow:
+      0 0 0 3px var(--surface),
+      0 0 0 7px var(--tom-mood-ring);
+  }
+}
+@keyframes tom-thinking-pulse {
+  0%, 100% {
+    box-shadow:
+      0 8px 20px rgba(0, 0, 0, 0.16),
+      0 2px 6px  rgba(0, 0, 0, 0.08),
+      0 0 0 3px  var(--surface),
+      0 0 0 5px  var(--tom-mood-ring);
+  }
+  50% {
+    box-shadow:
+      0 8px 20px rgba(0, 0, 0, 0.16),
+      0 2px 6px  rgba(0, 0, 0, 0.08),
+      0 0 0 3px  var(--surface),
+      0 0 0 9px  var(--tom-mood-ring);
+  }
+}
+@keyframes tom-thinking-pulse-flat {
+  0%, 100% {
+    box-shadow:
+      0 0 0 3px var(--surface),
+      0 0 0 6px var(--tom-mood-ring);
+  }
+  50% {
+    box-shadow:
+      0 0 0 3px var(--surface),
+      0 0 0 10px var(--tom-mood-ring);
+  }
+}
+
+.chat-trigger {
+  position: fixed;
+  right: var(--chat-trigger-right);
+  top: var(--chat-trigger-top);
+  width: var(--chat-trigger-size);
+  height: var(--chat-trigger-size);
+  border: 0;
+  border-radius: 50%;
+  background: var(--ink) var(--tom-avatar-image, url("assets/Tom_Avatar.png")) center / cover no-repeat;
+  color: transparent;
+  font-family: var(--font-sans);
+  font-size: 0;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  cursor: pointer;
+  z-index: 50;
+  /* Layered elevation — drop + halo + mood-ring (note-coloured per state) */
+  box-shadow:
+    0 8px 20px rgba(0, 0, 0, 0.16),
+    0 2px 6px  rgba(0, 0, 0, 0.08),
+    0 0 0 3px  var(--surface),
+    0 0 0 5px  var(--tom-mood-ring, var(--hairline));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform var(--t-state) var(--ease-out), box-shadow var(--t-state) var(--ease-out);
+  animation: tom-mood-pulse-soft 4000ms ease-in-out infinite;
+}
+/* Loud pulse overrides the soft default on thinking + celebration */
+body[data-tom-state="thinking"] .chat-trigger,
+body[data-tom-state="celebration"] .chat-trigger {
+  animation: tom-thinking-pulse 2400ms ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .chat-trigger,
+  body[data-tom-state="thinking"] .chat-trigger,
+  body[data-tom-state="celebration"] .chat-trigger { animation: none; }
+}
+.chat-trigger:hover { transform: translateY(-1px); }
+.chat-trigger:active { transform: translateY(0); }
+
+/* Speech-bubble notch — sits at the disc's bottom-left corner so it
+   reads as "this is a chat bubble that contains Tom". */
+.chat-trigger::after {
+  content: "";
+  position: absolute;
+  width: 14px; height: 14px;
+  background: var(--ink);
+  bottom: -2px;
+  left: -2px;
+  clip-path: polygon(0 0, 100% 100%, 0 100%);
+  border-radius: 0 0 0 4px;
+}
+
+/* Pulse-once animation. JS class .is-pulsing → animation runs → JS
+   removes class after animation ends. The animation itself is
+   independent of state; only its application is gated. */
+@keyframes chat-pulse {
+  0%   { box-shadow: var(--sh-pop), 0 0 0 3px var(--surface), 0 0 0 4px var(--hairline), 0 0 0 4px rgba(26,26,26,0.4); }
+  60%  { box-shadow: var(--sh-pop), 0 0 0 3px var(--surface), 0 0 0 4px var(--hairline), 0 0 0 18px rgba(26,26,26,0); }
+  100% { box-shadow: var(--sh-pop), 0 0 0 3px var(--surface), 0 0 0 4px var(--hairline), 0 0 0 18px rgba(26,26,26,0); }
+}
+.chat-trigger.is-pulsing { animation: chat-pulse 1800ms var(--ease-out-cubic) 1 both; }
+@media (prefers-reduced-motion: reduce) {
+  .chat-trigger.is-pulsing { animation: none; }
+}
+
+/* ── Chat panel ──────────────────────────────────────────────── */
+.chat-scrim {
+  position: fixed; inset: 0;
+  background: rgba(26,26,26,0.18);
+  z-index: 60;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--t-drawer) var(--ease-out);
+}
+.chat-scrim.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.chat-panel {
+  position: fixed;
+  top: 0; right: 0; bottom: 0;
+  width: var(--chat-panel-w);
+  background: var(--surface);
+  z-index: 70;
+  transform: translateX(100%);
+  transition: transform var(--t-drawer) var(--ease-out-cubic);
+  display: flex;
+  flex-direction: column;
+  /* Lateral shadow — projects leftward into the canvas so the
+     panel reads as floating above content, not flush to the edge */
+  box-shadow:
+    -16px 0 40px rgba(0, 0, 0, 0.14),
+    -4px  0 12px rgba(0, 0, 0, 0.06);
+}
+.chat-panel.is-open { transform: translateX(0); }
+
+.chat-panel__head {
+  flex: 0 0 auto;
+  height: var(--header-h);
+  border-bottom: 1px solid var(--hairline);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 12px;
+}
+.chat-panel__title {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--ink);
+  flex: 1;
+}
+.chat-panel__close {
+  width: 32px; height: 32px;
+  border: 0;
+  background: transparent;
+  border-radius: 999px;
+  cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--ink-2);
+}
+.chat-panel__close:hover { background: rgba(0,0,0,0.04); color: var(--ink); }
+.chat-panel__close svg { width: 14px; height: 14px; }
+
+.chat-panel__body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 32px 20px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 16px;
+  text-align: center;
+  color: var(--ink-2);
+}
+.chat-panel__placeholder-mark {
+  width: 144px; height: 144px;
+  border-radius: 50%;
+  background: var(--ink) var(--tom-avatar-image, url("assets/Tom_Avatar.png")) center / cover no-repeat;
+  color: transparent;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0; font-weight: 800; letter-spacing: -0.5px;
+  margin-bottom: 8px;
+  box-shadow: 0 0 0 3px var(--surface), 0 0 0 6px var(--tom-mood-ring, var(--hairline));
+  animation: tom-mood-pulse-soft-flat 4000ms ease-in-out infinite;
+}
+body[data-tom-state="thinking"] .chat-panel__placeholder-mark,
+body[data-tom-state="celebration"] .chat-panel__placeholder-mark {
+  animation: tom-thinking-pulse-flat 2400ms ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .chat-panel__placeholder-mark,
+  body[data-tom-state="thinking"] .chat-panel__placeholder-mark,
+  body[data-tom-state="celebration"] .chat-panel__placeholder-mark { animation: none; }
+}
+.chat-panel__placeholder-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.chat-panel__placeholder-body {
+  font-size: 13px;
+  font-weight: 500;
+  max-width: 28ch;
+  line-height: 1.5;
+}
+
+.chat-panel__compose {
+  flex: 0 0 auto;
+  border-top: 1px solid var(--hairline);
+  padding: 12px 16px 16px;
+  display: flex;
+  gap: 8px;
+}
+.chat-panel__compose input {
+  flex: 1;
+  height: 40px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0 16px;
+  font-size: 13px;
+  background: var(--page-bg);
+  color: var(--ink);
+}
+.chat-panel__compose input::placeholder { color: var(--label-soft); }
+.chat-panel__compose input:disabled { cursor: not-allowed; }
+
+/* ── Mobile fallback — chat becomes a bottom sheet ──────────── */
+@media (max-width: 599px) {
+  .chat-panel {
+    top: auto;
+    width: 100%;
+    height: 80dvh;
+    border-radius: 16px 16px 0 0;
+    transform: translateY(100%);
+    /* Bottom sheet — shadow projects upward off the top edge */
+    box-shadow:
+      0 -16px 40px rgba(0, 0, 0, 0.14),
+      0 -4px  12px rgba(0, 0, 0, 0.06);
+  }
+  .chat-panel.is-open { transform: translateY(0); }
+  .chat-panel__head::before {
+    content: "";
+    position: absolute;
+    top: 8px; left: 50%;
+    transform: translateX(-50%);
+    width: 36px; height: 4px;
+    border-radius: 2px;
+    background: var(--border);
+  }
+  .chat-panel__head { position: relative; padding-top: 16px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-scrim, .chat-panel { transition: none; }
+}

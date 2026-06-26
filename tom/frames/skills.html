@@ -1,0 +1,2496 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>Tom — Skills</title>
+<link rel="stylesheet" href="tom-tokens.css">
+<link rel="stylesheet" href="tom-shell.css">
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+/* ────────────────────────────────────────────────────────────────
+   Tom — Skills (unified)
+   Ported from standalone skills-screen-v7. Carries:
+   - Variable-depth zoom (Overview → Categories → Tree → Skill),
+     with Piano as the only categorised galaxy for now
+   - Breadcrumb navigation pill (replaces 3-button zoom control)
+   - Focus inset showing the suggested-skill's tree constellation
+     with a pulsing soft-gold reticle on the suggested node;
+     header carries pin (gold = Tom, ink = user) + bolt-stack
+     boost indicator (1 / 2 / 3 bolts = the multiplier)
+   - Mini-galaxy renderer for category-level zoom
+   - All v7 state-machine wiring (galaxy click, hover reticle,
+     star click, drawer behaviour)
+
+   Shell chrome (header, tabbar, chat trigger/panel) provided by
+   tom-shell.css — duplicated styles in v7 stripped on port-in.
+   ──────────────────────────────────────────────────────────────── */
+
+:root {
+  /* tom-tokens.css provides --header-h. We override --nav-reserve locally
+     because Skills wants a slightly tighter clearance — the observatory
+     plate wants the room. */
+  --nav-reserve: 88px;
+  --top-pad:     12px;
+  --avail-h:     calc(100dvh - var(--header-h) - var(--nav-reserve) - var(--top-pad));
+
+  /* Galaxy paint */
+  --gal-guitar:  #72C830;
+  --gal-piano:   #E85C2A;
+  --gal-bass:    #2AB862;
+  --gal-ableton: #2AB8A8;
+
+  --sh-card:    0 2px 10px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.04);
+  --sh-pop:     0 4px 16px rgba(0,0,0,0.06);
+  --sh-tab:     0 1px 3px rgba(0,0,0,0.06);
+}
+
+body { overflow: hidden; }
+
+/* Shell components (.app, .shell-header, .brand-mark, .wordmark, .xp-pill,
+   .tabbar, .chat-trigger, .chat-panel) provided by tom-shell.css. */
+
+/* ── Main: full-bleed plate canvas ─────────────────────────── */
+main {
+  flex: 1;
+  min-height: 0;
+  padding: var(--top-pad) 0 var(--nav-reserve);
+  display: flex;
+  position: relative;
+  overflow: hidden;
+}
+
+.plate-stage {
+  position: relative;
+  width: 100%;
+  height: var(--avail-h);
+  container-type: size;
+  overflow: hidden;
+}
+
+/* ── Layered plate (nebulae / SVG / wisps) ─────────────────── */
+.nebula {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(36px);
+  pointer-events: none;
+  mix-blend-mode: multiply;
+  z-index: 1;
+  transition: opacity 320ms ease;
+}
+.wisp {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center,
+              rgba(255,255,255,0.85), rgba(255,255,255,0));
+  filter: blur(24px);
+  pointer-events: none;
+  mix-blend-mode: screen;
+  z-index: 3;
+}
+.plate-svg {
+  position: absolute; inset: 0;
+  z-index: 2;
+  display: block;
+  width: 100%; height: 100%;
+}
+
+/* ── Zoom state — layer fades ──────────────────────────────── */
+.layer-galaxies, .layer-categories, .layer-tree {
+  transition: opacity 320ms ease;
+}
+/* Overview: galaxies on, all else off */
+.plate-stage[data-zoom="overview"] .layer-galaxies   { opacity: 1; }
+.plate-stage[data-zoom="overview"] .layer-categories { opacity: 0; pointer-events: none; }
+.plate-stage[data-zoom="overview"] .layer-tree       { opacity: 0; pointer-events: none; }
+
+/* Categories: galaxies hidden, mini-galaxies on, tree off */
+.plate-stage[data-zoom="categories"] .layer-galaxies   { opacity: 0; pointer-events: none; }
+.plate-stage[data-zoom="categories"] .layer-categories { opacity: 1; }
+.plate-stage[data-zoom="categories"] .layer-tree       { opacity: 0; pointer-events: none; }
+
+/* Tree / Skill: only tree visible */
+.plate-stage[data-zoom="tree"]  .layer-galaxies,
+.plate-stage[data-zoom="skill"] .layer-galaxies   { opacity: 0; pointer-events: none; }
+.plate-stage[data-zoom="tree"]  .layer-categories,
+.plate-stage[data-zoom="skill"] .layer-categories { opacity: 0; pointer-events: none; }
+.plate-stage[data-zoom="tree"]  .layer-tree,
+.plate-stage[data-zoom="skill"] .layer-tree       { opacity: 1; }
+
+/* In any non-overview mode the chosen galaxy's nebula stays
+   atmospheric; the others fade right back. */
+.plate-stage:not([data-zoom="overview"]) .nebula:not(.active) { opacity: 0.04; }
+
+/* Inset only in overview */
+.plate-stage[data-zoom="overview"] .inset { opacity: 1; pointer-events: auto; }
+.plate-stage:not([data-zoom="overview"]) .inset { opacity: 0; pointer-events: none; }
+.inset { transition: opacity 220ms ease; }
+
+/* ── Galaxy interaction ────────────────────────────────────── */
+.galaxy-hit {
+  cursor: pointer;
+  fill: transparent;
+}
+/* No hover transform — produced shake/artefacts during filter re-render.
+   Hover affordance is handled by the dashed reticle moving to the hovered
+   galaxy + inset re-rendering with that galaxy's tree. */
+
+/* Plate corner annotations — Layer 4 */
+.plate-ann {
+  position: absolute;
+  z-index: 4;
+  pointer-events: none;
+  font-family: var(--font-sans);
+  color: var(--ink-2);
+}
+/* SIDE-FLIP NOTE: in this version the layout is mirrored — the
+   skill detail drawer (was right) is now on the LEFT, and the
+   index drawer + edge tab + focus inset are now on the RIGHT.
+   Class names .ann-tl / .ann-tr / .ann-bl / .ann-br / .drawer-left /
+   .drawer-right keep their historical names but their CSS positions
+   are flipped. Edits here should respect the new mirroring. */
+
+/* PL.I top-corner marker removed entirely — was decorative, made the
+   right-hand corner busy when paired with the breadcrumb. The
+   breadcrumb on its own carries the navigation context. */
+
+/* Breadcrumb — pinned top-RIGHT, statically positioned. Higher
+   z-index drawers (index, chat panel) slide OVER it when open;
+   navigation isn't needed while interacting with those surfaces.
+   This avoids the breadcrumb-jumping behaviour that earlier versions
+   had where it shifted in response to drawer state. */
+.ann-tr {
+  top: clamp(10px, 2cqh, 22px);
+  right: clamp(14px, 3cqi, 28px);
+  display: flex; align-items: center;
+  gap: 2px;
+  background: #fff;
+  border: 1px solid var(--tab-border);
+  border-radius: 999px;
+  box-shadow: var(--sh-pop);
+  padding: 5px 8px 5px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+  pointer-events: auto;
+  max-width: 60%;
+  flex-wrap: nowrap;
+  color: var(--ink-2);
+}
+.ann-tr::before {
+  /* Compass-style "you are here" marker */
+  content: "";
+  display: inline-block;
+  width: 10px; height: 10px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 50%, var(--ink) 0 2px, transparent 2.5px),
+    radial-gradient(circle at 50% 50%, var(--ink-2) 4px, transparent 4.5px);
+  background-color: transparent;
+  flex-shrink: 0;
+}
+.ann-tr button {
+  background: transparent;
+  border: 0;
+  font: inherit;
+  color: var(--ink-2);
+  letter-spacing: inherit;
+  text-transform: inherit;
+  padding: 4px 8px;
+  cursor: pointer;
+  border-radius: 999px;
+  font-weight: 700;
+  white-space: nowrap;
+  max-width: 22ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background 160ms ease, color 160ms ease;
+}
+.ann-tr button:hover:not(.terminal) {
+  background: var(--page-bg);
+  color: var(--ink);
+}
+.ann-tr button.terminal {
+  color: var(--ink);
+  background: var(--ink);
+  color: #fff;
+  font-weight: 800;
+  cursor: default;
+}
+.ann-tr .crumb-arrow {
+  font-size: 13px;
+  color: var(--ink-2);
+  opacity: 0.55;
+  font-weight: 700;
+  margin: 0 1px;
+}
+.ann-bl {
+  /* Flipped to bottom-RIGHT to mirror the original. Sits above the
+     focus inset which now occupies bottom-right. */
+  bottom: calc(clamp(180px, 32cqh, 250px) + clamp(20px, 3cqh, 30px));
+  right: clamp(14px, 3cqi, 28px);
+  display: flex; align-items: center; gap: 16px;
+  font-size: clamp(9px, 1.3cqi, 11px);
+  font-weight: 700;
+  letter-spacing: 0.6px;
+}
+/* When zoomed in (no inset visible), the galaxy header can drop back
+   to the natural bottom-right corner. */
+.plate-stage:not([data-zoom="overview"]) .ann-bl {
+  bottom: clamp(10px, 2cqh, 22px);
+}
+.ann-bl b {
+  color: var(--ink); font-weight: 800;
+  font-feature-settings: "tnum" 1;
+}
+.ann-br {
+  bottom: clamp(10px, 2cqh, 22px);
+  left: clamp(14px, 3cqi, 28px);   /* was right — now bottom-left */
+  font-family: var(--font-mono);
+  font-size: clamp(9px, 1.2cqi, 11px);
+  font-weight: 600;
+  letter-spacing: 1px;
+  opacity: 0.7;
+}
+
+/* In tree/skill mode the bottom-left counts swap to a galaxy header */
+.ann-bl .overview-counts,
+.ann-bl .galaxy-header { transition: opacity 220ms ease; }
+.plate-stage[data-zoom="overview"] .galaxy-header  { display: none; }
+.plate-stage:not([data-zoom="overview"]) .overview-counts { display: none; }
+.galaxy-header {
+  display: flex; align-items: center; gap: 10px;
+}
+.galaxy-header .gh-dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  border: 1.25px solid #fff;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+}
+.galaxy-header .gh-name {
+  font-weight: 800; color: var(--ink);
+  letter-spacing: 1.2px; text-transform: uppercase;
+}
+.galaxy-header .gh-meta {
+  font-weight: 700; color: var(--ink-2);
+  font-feature-settings: "tnum" 1;
+}
+
+/* ── Focus inset — bottom-RIGHT, Overview only (flipped).
+   Tree-constellation of whichever galaxy is currently being
+   previewed (initial: Piano; updates on hover). Clickable as
+   quick-nav to that galaxy's pinned/suggested skill. ─────── */
+.inset {
+  position: absolute;
+  z-index: 5;
+  bottom: clamp(40px, 8cqh, 70px);
+  right: clamp(14px, 3cqi, 28px);
+  width: clamp(260px, 30cqi, 340px);
+  height: clamp(180px, 32cqh, 250px);
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  box-shadow: var(--sh-card);
+  overflow: hidden;
+  display: flex; flex-direction: column;
+  container-type: size;
+  cursor: pointer;
+  transition: transform 180ms ease, box-shadow 180ms ease;
+  padding: 0;
+  text-align: left;
+}
+.inset:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.10), 0 0 0 1px rgba(0,0,0,0.06);
+}
+.inset:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+.inset-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px;
+  padding: clamp(8px, 6cqh, 12px) clamp(10px, 5cqi, 14px);
+  border-bottom: 1px solid var(--hairline);
+  flex-shrink: 0;
+}
+.inset-head .ttl {
+  display: flex; align-items: center; gap: 8px;
+  font-size: clamp(10px, 5cqi, 12px);
+  font-weight: 800; color: var(--ink);
+  letter-spacing: 0.4px; text-transform: uppercase;
+  white-space: nowrap;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.inset-head .ttl .dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--gal-piano);
+  box-shadow: 0 0 0 1.25px #fff;
+  flex-shrink: 0;
+}
+.inset-head .ttl .crumb-sep {
+  color: var(--ink-2); opacity: 0.55; font-weight: 700;
+}
+/* Header right-slot indicators — pin + bolt-stack.
+   Replaces v6's textual "Tom suggests · 2× XP" pill with iconic
+   indicators that sit naturally in the v4 header rhythm. */
+.inset-meta {
+  display: inline-flex; align-items: center; gap: 8px;
+  flex-shrink: 0;
+}
+
+/* Pin glyph — gold for Tom, ink for user */
+.pin-mark {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px;
+  flex-shrink: 0;
+}
+.pin-mark svg { width: 14px; height: 14px; display: block; }
+.pin-mark[data-source="tom"]  svg { color: var(--gold-text); }
+.pin-mark[data-source="user"] svg { color: var(--ink-2); }   /* grey */
+
+/* Boost — bolt glyphs in a soft-gold pill. Bolt count = (multiplier - 1):
+   1 bolt = 2× (double), 2 bolts = 3× (triple), 3 bolts = 4× (quadruple).
+   Pill hides entirely at 1× (no boost). */
+.boost-stack {
+  display: inline-flex; align-items: center;
+  gap: 1px;
+  padding: 3px 7px;
+  background: rgba(201, 162, 39, 0.14);
+  border: 1px solid rgba(201, 162, 39, 0.32);
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+.boost-stack .bolt {
+  width: 9px; height: 11px;
+  background: var(--gold-text);
+  clip-path: polygon(55% 0, 0 60%, 40% 60%, 25% 100%, 100% 35%, 55% 35%);
+  display: inline-block;
+}
+.boost-stack[data-boost="1"] { display: none; }
+
+.inset-canvas {
+  position: relative;
+  flex: 1;
+  background: #fff;
+  overflow: hidden;
+}
+.inset-canvas svg { width: 100%; height: 100%; display: block; }
+
+/* Highlight reticle inside the inset on Tom-suggested node */
+@keyframes inset-pulse {
+  0%, 100% { stroke-opacity: 0.85; r: 16; }
+  50%      { stroke-opacity: 0.45; r: 20; }
+}
+.inset-suggest-reticle {
+  fill: none;
+  stroke: var(--gold-text);
+  stroke-width: 1.4;
+  stroke-dasharray: 3 4;
+  animation: inset-pulse 2200ms ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .inset-suggest-reticle { animation: none; opacity: 0.5; r: 18; }
+}
+
+/* ── Index handle — top-centre, hangs from the plate's top edge.
+   Was a vertical edge tab on the right rail in earlier versions;
+   moved to the top to free the right rail (which was squeezed
+   between the chat trigger above and the focus inset below). */
+.edge-tab {
+  position: absolute;
+  z-index: 6;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fff;
+  border: 1px solid var(--border);
+  border-top: 0;
+  border-radius: 0 0 10px 10px;
+  padding: 7px 16px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  box-shadow: var(--sh-tab);
+  min-height: 28px;
+  min-width: 88px;
+  font-family: var(--font-sans);
+}
+.edge-tab:hover { color: var(--ink); }
+.edge-tab .pl-num {
+  font-size: 9px; font-weight: 800;
+  color: var(--ink);
+  letter-spacing: 1.4px;
+}
+.edge-tab .tick {
+  width: 14px; height: 1px;
+  background: var(--border);
+}
+.edge-tab .lbl {
+  font-size: 10px; font-weight: 800;
+  color: var(--ink-2);
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+}
+.edge-tab .chev {
+  width: 10px; height: 10px;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--ink-2);
+  transition: transform 220ms ease;
+}
+.edge-tab[aria-expanded="true"] .chev { transform: rotate(180deg); }
+.edge-tab .chev svg { width: 10px; height: 10px; }
+
+/* SVG plate elements */
+.edge {
+  stroke: #1A1A1A;
+  stroke-width: 0.9;
+  stroke-opacity: 0.18;
+  fill: none;
+  stroke-linecap: round;
+}
+.edge.faint { stroke-opacity: 0.13; stroke-dasharray: 2 4; }
+.edge.constellation { stroke-opacity: 0.22; }
+
+@keyframes pulse-ring {
+  0%   { r: 14; opacity: 0.55; }
+  100% { r: 28; opacity: 0; }
+}
+.pulse-ring {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.1;
+  animation: pulse-ring 2200ms cubic-bezier(0.16,1,0.3,1) infinite;
+}
+@keyframes focus-pulse {
+  0%, 100% { stroke-opacity: 0.85; r: 30; }
+  50%      { stroke-opacity: 0.50; r: 36; }
+}
+.focus-reticle {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.4;
+  stroke-dasharray: 4 5;
+  animation: focus-pulse 2400ms ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pulse-ring, .focus-reticle { animation: none; opacity: 0.4; }
+  .pulse-ring { r: 16; }
+  .focus-reticle { r: 32; }
+  .drawer-right, .drawer-left, .layer-galaxies, .layer-tree, .nebula, .inset { transition: none !important; }
+  .status-pill .dot { animation: none; }
+}
+
+.galaxy-name {
+  font-family: var(--font-sans);
+  font-size: 14px; font-weight: 800;
+  fill: var(--ink);
+  letter-spacing: -0.2px;
+  pointer-events: none;
+}
+.galaxy-meta {
+  font-family: var(--font-sans);
+  font-size: 10px; font-weight: 700;
+  fill: var(--ink-2);
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+.mini-galaxy-name {
+  font-family: var(--font-sans);
+  font-size: 13px; font-weight: 800;
+  fill: var(--ink);
+  letter-spacing: -0.1px;
+  pointer-events: none;
+}
+.mini-galaxy-meta {
+  font-family: var(--font-sans);
+  font-size: 10px; font-weight: 700;
+  fill: var(--ink-2);
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+.mini-hit { cursor: pointer; }
+.star-label {
+  font-family: var(--font-sans);
+  font-size: 11px; font-weight: 800;
+  fill: var(--ink);
+  pointer-events: none;
+}
+.star-label.previewed { fill: #4A4A4A; font-weight: 600; }
+.substar-label {
+  font-family: var(--font-sans);
+  font-size: 9px; font-weight: 800;
+  fill: #4A4A4A;
+  pointer-events: none;
+}
+
+/* Tree-layer star sizing — scaled up versus the inset */
+.tree-star { cursor: pointer; }
+.tree-star-label {
+  font-family: var(--font-sans);
+  font-size: 14px; font-weight: 800;
+  fill: var(--ink);
+  pointer-events: none;
+}
+.tree-star-label.previewed { fill: #4A4A4A; font-weight: 600; }
+.tree-substar-label {
+  font-family: var(--font-sans);
+  font-size: 11px; font-weight: 800;
+  fill: #4A4A4A;
+  pointer-events: none;
+}
+
+/* ── Drawers ───────────────────────────────────────────────── */
+.scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(26,26,26,0.20);
+  z-index: 39;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 220ms ease;
+}
+.scrim.open { opacity: 1; pointer-events: auto; }
+
+/* DRAWERS:
+   - .drawer-left  = INDEX. Was a side drawer; now a top-anchored
+     popover sheet that drops down from the centred handle. Wide+short
+     instead of narrow+tall — content laid out horizontally.
+   - .drawer-right = SKILL DETAIL, slides in from the LEFT (kept).
+   The chat panel (right edge) doesn't compete with either now. */
+.drawer-left {
+  position: absolute;
+  z-index: 40;
+  top: 0; left: 50%;
+  transform: translate(-50%, -105%);
+  width: min(calc(100% - 32px), 480px);
+  /* Height follows content — no max-height + no scroll. The index
+     content is bounded (4 galaxies + 4 stats + 4 legend), so this
+     stays a comfortable size in practice. */
+  background: #fff;
+  border: 1px solid var(--border);
+  border-top: 0;
+  border-radius: 0 0 14px 14px;
+  box-shadow: var(--sh-pop);
+  transition: transform 240ms cubic-bezier(0.16,1,0.3,1);
+  display: flex; flex-direction: column;
+}
+.drawer-left.open { transform: translate(-50%, 0); }
+
+.drawer-right {
+  position: absolute;
+  z-index: 40;
+  top: 0; left: 0;
+  height: 100%;
+  width: clamp(300px, 32cqi, 380px);
+  background: #fff;
+  border-right: 1px solid var(--border);
+  box-shadow: var(--sh-pop);
+  transform: translateX(-105%);
+  transition: transform 220ms ease;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.drawer-right.open { transform: translateX(0); }
+
+.drawer-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--hairline);
+  flex-shrink: 0;
+}
+.drawer-head .eyebrow {
+  font-size: 10px; font-weight: 800; color: var(--ink-2);
+  letter-spacing: 0.7px; text-transform: uppercase;
+}
+.drawer-head .eyebrow .arrow { color: var(--ink); margin: 0 6px; }
+.drawer-close {
+  width: 36px; height: 36px;
+  border-radius: 999px;
+  background: transparent;
+  border: 0;
+  color: var(--ink-2);
+  cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.drawer-close:hover { background: rgba(0,0,0,0.05); color: var(--ink); }
+.drawer-close svg { width: 14px; height: 14px; }
+
+.drawer-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 18px 20px 20px;
+  display: flex; flex-direction: column;
+  gap: 18px;
+}
+
+.detail-titlerow {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+.detail-title {
+  font-size: 22px; font-weight: 800;
+  letter-spacing: -0.3px; color: var(--ink);
+  line-height: 1.15;
+  margin: 0;
+}
+.status-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 10px; font-weight: 800;
+  text-transform: uppercase; letter-spacing: 0.6px;
+  color: #B85328;
+  flex: none;
+  padding: 5px 10px;
+  border: 1px solid rgba(184,83,40,0.25);
+  border-radius: 999px;
+  background: rgba(232,92,42,0.06);
+  white-space: nowrap;
+}
+.status-pill .dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--gal-piano);
+  animation: tiny-pulse 1800ms ease-in-out infinite;
+}
+@keyframes tiny-pulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(232,92,42,0.18); }
+  50%      { box-shadow: 0 0 0 5px rgba(232,92,42,0.10); }
+}
+.detail-desc {
+  font-size: 14px; font-weight: 500;
+  color: var(--ink-2);
+  line-height: 1.5;
+  margin: 0;
+  text-wrap: pretty;
+}
+
+.meta-list {
+  display: flex; flex-direction: column;
+  gap: 12px;
+}
+.meta-row {
+  display: grid;
+  grid-template-columns: 124px 1fr;
+  gap: 12px;
+  align-items: baseline;
+}
+.meta-row .k {
+  font-size: 10px; font-weight: 800; color: var(--ink-2);
+  letter-spacing: 0.5px; text-transform: uppercase;
+}
+.meta-row .v {
+  font-size: 13px; font-weight: 700; color: var(--ink);
+  line-height: 1.35;
+}
+
+.progress-block {
+  background: var(--page-bg);
+  border-radius: 10px;
+  padding: 14px;
+}
+.progress-block .row {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 8px;
+}
+.progress-block .lbl {
+  font-size: 11px; font-weight: 800; color: var(--ink-2);
+  letter-spacing: 0.5px; text-transform: uppercase;
+}
+.progress-block .val {
+  font-size: 13px; font-weight: 800; color: var(--ink);
+  font-feature-settings: "tnum" 1;
+}
+.progress-block .bar {
+  height: 6px;
+  border-radius: 3px;
+  background: #E0E0E0;
+  overflow: hidden;
+}
+.progress-block .bar > div {
+  height: 100%;
+  background: var(--gal-piano);
+  border-radius: 3px;
+}
+.progress-block .ticks {
+  margin-top: 8px;
+  display: flex; gap: 6px;
+}
+.progress-block .tick {
+  flex: 1; height: 6px; border-radius: 2px;
+  background: #E0E0E0;
+}
+.progress-block .tick.done { background: var(--gold); }
+.progress-block .tick.curr {
+  background: linear-gradient(90deg, var(--gold) 60%, #E0E0E0 60%);
+}
+
+.cta-stack {
+  display: flex; flex-direction: column; gap: 8px;
+  margin-top: 4px;
+}
+.btn-primary {
+  background: var(--ink);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 14px 14px;
+  font-family: var(--font-sans);
+  font-size: 14px; font-weight: 800;
+  cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  white-space: nowrap;
+}
+.btn-primary > span:first-child { white-space: nowrap; }
+.btn-primary .cost {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-weight: 700;
+  color: var(--gold);
+  font-feature-settings: "tnum" 1;
+  border-left: 1px solid rgba(255,255,255,0.18);
+  padding-left: 8px;
+  white-space: nowrap;
+}
+.btn-primary .cost .bolt {
+  width: 11px; height: 11px;
+  background: var(--gold);
+  clip-path: polygon(55% 0, 0 60%, 40% 60%, 25% 100%, 100% 35%, 55% 35%);
+  display: inline-block;
+}
+.btn-secondary {
+  background: #fff;
+  color: var(--ink);
+  border: 1px solid var(--tab-border);
+  border-radius: 10px;
+  padding: 13px 16px;
+  font-family: var(--font-sans);
+  font-size: 13px; font-weight: 800;
+  cursor: pointer;
+  min-height: 44px;
+}
+
+/* Skill-card head actions — pin icon + close X grouped on the right
+   of the drawer-head. Pin is a small icon button; user pinning is
+   the rare 5% case so it doesn't need a text label. */
+.head-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.card-pin {
+  width: 28px; height: 28px;
+  border-radius: 999px;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.card-pin:hover { background: rgba(0,0,0,0.05); }
+.card-pin svg { width: 14px; height: 14px; }
+/* Default (no user pin) — outline-style: low-opacity grey */
+.card-pin[data-state="none"] svg { color: var(--ink-2); opacity: 0.55; }
+.card-pin[data-state="none"]:hover svg { opacity: 0.85; }
+/* User has pinned — filled grey, full opacity */
+.card-pin[data-state="user"] svg { color: var(--ink-2); opacity: 1; }
+.card-pin[data-state="user"]:hover svg { color: var(--ink); }
+
+/* Index sheet — wide+short horizontal layout. Replaces the old
+   narrow+tall vertical drawer. Three sections stacked: galaxies
+   (4 cards in a row), stats (4 in a row), legend (4 in a row). */
+.index-sheet {
+  padding: 14px 16px 16px;
+  display: flex; flex-direction: column;
+  gap: 12px;
+  overflow: hidden;
+}
+
+/* Close X — top-right corner of the index sheet */
+.sheet-close {
+  position: absolute;
+  top: 8px; right: 8px;
+  z-index: 1;
+  width: 28px; height: 28px;
+  border-radius: 999px;
+  background: transparent;
+  border: 0;
+  color: var(--ink-2);
+  cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.sheet-close:hover { background: rgba(0,0,0,0.05); color: var(--ink); }
+.sheet-close svg { width: 12px; height: 12px; }
+
+.index-galaxies {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+.galaxy-card {
+  display: flex; flex-direction: column; align-items: flex-start;
+  gap: 4px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+}
+.galaxy-card:hover { background: var(--page-bg); }
+.galaxy-card.active {
+  background: var(--page-bg);
+  border-color: var(--border);
+}
+.galaxy-card-dot {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  border: 1.25px solid #fff;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.10);
+}
+.galaxy-card-name {
+  font-size: 12px; font-weight: 800; color: var(--ink);
+  line-height: 1;
+}
+.galaxy-card-meta {
+  font-size: 10px; font-weight: 700; color: var(--ink-2);
+  font-feature-settings: "tnum" 1;
+  letter-spacing: 0.3px;
+}
+
+.index-stats {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--hairline);
+}
+.stat-cell {
+  display: flex; flex-direction: column; gap: 3px;
+  align-items: flex-start;
+}
+.stat-cell .k {
+  font-size: 9px; font-weight: 800; color: var(--ink-2);
+  letter-spacing: 0.5px; text-transform: uppercase;
+  line-height: 1;
+}
+.stat-cell .v {
+  font-size: 14px; font-weight: 800; color: var(--ink);
+  font-feature-settings: "tnum" 1;
+  line-height: 1;
+}
+
+.index-legend {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--hairline);
+  font-size: 11px; font-weight: 600; color: var(--ink-2);
+}
+.legend-cell {
+  display: inline-flex; align-items: center; gap: 6px;
+}
+
+/* Legacy classes — kept in case they're referenced by JS or older
+   sub-screens that still link this stylesheet. Safe to remove later. */
+.galaxy-list {
+  display: flex; flex-direction: column;
+  gap: 4px;
+}
+.galaxy-dot {
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  border: 1.25px solid #fff;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.10);
+}
+.galaxy-dot.lg { width: 16px; height: 16px; }
+.divider { height: 1px; background: var(--hairline); }
+.legend-swatch {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  border: 1.25px solid #fff;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.10);
+  flex-shrink: 0;
+}
+
+/* Bottom nav (.tabbar) provided by tom-shell.css */
+
+/* ── 375px mobile fallback ─────────────────────────────────── */
+@media (max-width: 599px) {
+  /* Header sizing handled by tom-shell.css; only screen-specific
+     plate adjustments live here. Breadcrumb stays pinned right;
+     drawers slide over it. */
+  .ann-tr { font-size: 9px; gap: 8px; right: 12px; }
+  .ann-tr .crumb-arrow { font-size: 11px; }
+  .ann-bl { display: none; }
+
+  .inset {
+    width: calc(100% - 24px);
+    height: clamp(150px, 22dvh, 200px);
+    bottom: 12px;
+    left: 12px;
+    right: 12px;
+  }
+
+  .drawer-left, .drawer-right {
+    top: auto;
+    bottom: 0;
+    left: 0; right: 0;
+    width: 100%;
+    height: min(82dvh, 640px);
+    border-radius: 18px 18px 0 0;
+    border: 0;
+    border-top: 1px solid var(--border);
+    transform: translateY(105%);
+    box-shadow: 0 -4px 24px rgba(0,0,0,0.12);
+  }
+  .drawer-left.open, .drawer-right.open { transform: translateY(0); }
+
+  .drawer-head { padding-top: 22px; position: relative; }
+  .drawer-head::before {
+    content: "";
+    position: absolute;
+    top: 8px; left: 50%;
+    transform: translateX(-50%);
+    width: 36px; height: 4px;
+    border-radius: 2px;
+    background: #DADADA;
+  }
+
+  .meta-row { grid-template-columns: 1fr; gap: 4px; }
+
+  .edge-tab { padding: 10px 6px; }
+}
+
+:focus { outline: none; }
+:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+</style>
+<style id="pf-frame-strip">
+  /* Portfolio embed — strip ONLY the app shell (header / tabbar / chat) so
+     nothing navigates off to screens that don't exist here. The skills
+     star-map stays fully interactive — click a galaxy to climb in. */
+  .shell-header, .tabbar,
+  .chat-trigger, .chat-scrim, .chat-panel { display: none !important; }
+  :root { --header-h: 0px !important; --nav-reserve: 16px !important; }
+  html, body { background: var(--page-bg) !important; }
+  main { padding-top: 8px !important; }
+</style>
+</head>
+<body data-tom-state="thinking">
+
+<div class="app">
+
+  <!-- ── HEADER (unified shell, landing variant) ───────────── -->
+  <header class="shell-header shell-header--landing">
+    <div class="brand-mark" aria-hidden="true">T</div>
+    <div class="wordmark">Tom</div>
+    <div class="spacer"></div>
+    <button type="button" class="xp-pill" aria-label="1,240 XP, Level 4">
+      <span class="xp-bolt" aria-hidden="true"></span>
+      <span>1,240 XP</span>
+      <span class="lvl">Lv 4</span>
+    </button>
+  </header>
+
+  <!-- ── MAIN: PLATE ───────────────────────────────────────── -->
+  <main>
+    <section class="plate-stage" id="plate-stage" data-zoom="overview" data-galaxy="piano" data-screen-label="01 Observatory plate">
+
+      <!-- Layer 1: nebulae (one per galaxy, identifiable for tree-mode dimming) -->
+      <div class="nebula" data-galaxy="guitar" style="left: 6%; top: 14%; width: 26%; height: 50%;
+        background: radial-gradient(circle at 50% 50%,
+          rgba(96,123,150,0.10) 0%, rgba(96,123,150,0.07) 28%,
+          rgba(200,144,58,0.085) 62%, rgba(200,144,58,0) 88%);"></div>
+      <div class="nebula" data-galaxy="piano" style="left: 50%; top: 10%; width: 30%; height: 54%;
+        background: radial-gradient(circle at 50% 50%,
+          rgba(96,123,150,0.10) 0%, rgba(96,123,150,0.07) 28%,
+          rgba(200,144,58,0.085) 62%, rgba(200,144,58,0) 88%);"></div>
+      <div class="nebula" data-galaxy="bass" style="left: 14%; top: 50%; width: 22%; height: 40%;
+        background: radial-gradient(circle at 50% 50%,
+          rgba(96,123,150,0.085) 0%, rgba(96,123,150,0.06) 28%,
+          rgba(200,144,58,0.075) 62%, rgba(200,144,58,0) 88%);"></div>
+      <div class="nebula" data-galaxy="ableton" style="left: 56%; top: 54%; width: 24%; height: 38%;
+        background: radial-gradient(circle at 50% 50%,
+          rgba(96,123,150,0.085) 0%, rgba(96,123,150,0.06) 28%,
+          rgba(200,144,58,0.075) 62%, rgba(200,144,58,0) 88%);"></div>
+
+      <!-- Layer 2: SVG plate (galaxies + tree groups inside) -->
+      <svg class="plate-svg" id="svg-plate" viewBox="0 0 1000 700" preserveAspectRatio="xMidYMid meet"></svg>
+
+      <!-- Layer 3: wisps -->
+      <div class="wisp" style="left: -2%; top: 36%; width: 22%; height: 18%;"></div>
+      <div class="wisp" style="left: 78%; top: 22%; width: 22%; height: 22%;"></div>
+      <div class="wisp" style="left: 36%; top: 68%; width: 26%; height: 18%;"></div>
+      <div class="wisp" style="left: 24%; top: 6%;  width: 28%; height: 14%;"></div>
+
+      <!-- Layer 4: plate annotations.
+           The PL.I corner marker was removed — the breadcrumb pill on
+           the right carries all the navigation context now. -->
+      <nav class="plate-ann ann-tr" id="breadcrumb" aria-label="Skill navigation breadcrumb">
+        <button type="button" class="terminal" data-crumb="overview">Overview</button>
+      </nav>
+      <div class="plate-ann ann-bl">
+        <div class="overview-counts" style="display:flex; align-items:center; gap:16px;">
+          <span><b>4</b> galaxies</span>
+          <span><b>49</b> skills</span>
+          <span><b>11</b> completed</span>
+        </div>
+        <div class="galaxy-header" id="galaxy-header">
+          <span class="gh-dot" id="gh-dot"></span>
+          <span class="gh-name" id="gh-name">Piano</span>
+          <span class="gh-meta" id="gh-meta">4 / 14 mastered</span>
+        </div>
+      </div>
+      <div class="plate-ann ann-br">N. 1240 / IV · MMXXVI</div>
+
+      <!-- Layer 5: focus inset — tree constellation of the suggested area (Overview only) -->
+      <button type="button" class="inset" id="focus-inset" aria-label="Tom-pinned: Seventh chords with 2x boost. Click to open.">
+        <div class="inset-head">
+          <div class="ttl">
+            <span class="dot" id="focus-gdot" aria-hidden="true"></span>
+            <span id="focus-galaxy">Piano</span>
+            <span class="crumb-sep" id="focus-crumb-sep">›</span>
+            <span id="focus-category">Chords &amp; Voicings</span>
+          </div>
+          <div class="inset-meta">
+            <span class="pin-mark" id="pin-mark" data-source="tom" aria-label="Tom-pinned">
+              <svg viewBox="0 0 14 14" aria-hidden="true">
+                <path d="M9.5 1.2 12.8 4.5 10.6 5.2 8.4 7.4 8.9 10.1 7 8.2 3 12.2 2.6 11.8 6.6 7.8 4.7 5.9 7.4 6.4 9.6 4.2 10.3 2z"
+                      fill="currentColor"/>
+              </svg>
+            </span>
+            <span class="boost-stack" id="boost-stack" data-boost="2" aria-label="2x reward boost">
+              <!-- bolts injected by JS -->
+            </span>
+          </div>
+        </div>
+        <div class="inset-canvas">
+          <svg id="svg-inset" viewBox="0 0 320 200" preserveAspectRatio="xMidYMid meet"></svg>
+        </div>
+      </button>
+
+      <!-- Layer 6: index handle — top-centre pull-down -->
+      <button type="button" class="edge-tab" id="edge-tab"
+              aria-expanded="false" aria-controls="drawer-left">
+        <span class="pl-num">PL.0</span>
+        <span class="tick" aria-hidden="true"></span>
+        <span class="lbl">Index</span>
+        <span class="chev" aria-hidden="true">
+          <svg viewBox="0 0 10 10"><path d="M2 3.5 5 6.5 8 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        </span>
+      </button>
+
+      <!-- Scrim for drawers -->
+      <div class="scrim" id="scrim" aria-hidden="true"></div>
+
+      <!-- Layer 7: index sheet — drops down from the handle -->
+      <aside class="drawer-left" id="drawer-left"
+             role="dialog" aria-modal="false" aria-label="Galaxies index"
+             aria-hidden="true" data-screen-label="02 Index sheet">
+        <button type="button" class="sheet-close" id="close-left" aria-label="Close index">
+          <svg viewBox="0 0 14 14" aria-hidden="true"><path d="M3 3l8 8M11 3l-8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+        <div class="index-sheet">
+          <!-- Galaxies — 4 horizontal cards -->
+          <div class="index-galaxies" id="index-galaxy-list">
+            <button type="button" class="galaxy-card" data-galaxy="guitar">
+              <span class="galaxy-card-dot" style="background: var(--gal-guitar);"></span>
+              <span class="galaxy-card-name">Guitar</span>
+              <span class="galaxy-card-meta">5 / 18</span>
+            </button>
+            <button type="button" class="galaxy-card active" data-galaxy="piano">
+              <span class="galaxy-card-dot" style="background: var(--gal-piano);"></span>
+              <span class="galaxy-card-name">Piano</span>
+              <span class="galaxy-card-meta">5 / 24</span>
+            </button>
+            <button type="button" class="galaxy-card" data-galaxy="bass">
+              <span class="galaxy-card-dot" style="background: var(--gal-bass);"></span>
+              <span class="galaxy-card-name">Bass</span>
+              <span class="galaxy-card-meta">2 / 8</span>
+            </button>
+            <button type="button" class="galaxy-card" data-galaxy="ableton">
+              <span class="galaxy-card-dot" style="background: var(--gal-ableton);"></span>
+              <span class="galaxy-card-name">Ableton</span>
+              <span class="galaxy-card-meta">0 / 9</span>
+            </button>
+          </div>
+
+          <!-- Stats — 4 in a row -->
+          <div class="index-stats">
+            <div class="stat-cell"><span class="k">Total XP</span><span class="v">1,240</span></div>
+            <div class="stat-cell"><span class="k">Level</span><span class="v">4</span></div>
+            <div class="stat-cell"><span class="k">Mastered</span><span class="v">11 / 49</span></div>
+            <div class="stat-cell"><span class="k">Streak</span><span class="v">7 days</span></div>
+          </div>
+
+          <!-- Legend — 4 swatches in a row -->
+          <div class="index-legend">
+            <span class="legend-cell"><span class="legend-swatch" style="background:#C9A227;"></span>Completed</span>
+            <span class="legend-cell"><span class="legend-swatch" style="background:#E85C2A;"></span>Available</span>
+            <span class="legend-cell"><span class="legend-swatch" style="background:#E85C2A; border:1.25px dashed #1A1A1A; opacity:0.55;"></span>Previewed</span>
+            <span class="legend-cell"><span class="legend-swatch" style="background:#1A1A1A; opacity:0.18;"></span>Hidden</span>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Layer 8: right drawer (Skill detail) — open by default. All
+           variable content is rendered by renderSkillCard() based on the
+           currently-previewed galaxy's pinned focus. -->
+      <aside class="drawer-right open" id="drawer-right"
+             role="dialog" aria-modal="false" aria-label="Skill detail"
+             data-screen-label="03 Skill detail">
+        <div class="drawer-head">
+          <div class="eyebrow" id="drawer-eyebrow">Piano <span class="arrow">›</span> Triads &amp; inversions</div>
+          <div class="head-actions">
+            <button type="button" class="card-pin" id="btn-pin" data-state="none" aria-label="Pin this skill to highlight" title="Pin this skill to highlight">
+              <svg viewBox="0 0 14 14" aria-hidden="true"><path d="M9.5 1.2 12.8 4.5 10.6 5.2 8.4 7.4 8.9 10.1 7 8.2 3 12.2 2.6 11.8 6.6 7.8 4.7 5.9 7.4 6.4 9.6 4.2 10.3 2z" fill="currentColor"/></svg>
+            </button>
+            <button type="button" class="drawer-close" id="close-right" aria-label="Close detail">
+              <svg viewBox="0 0 14 14" aria-hidden="true"><path d="M3 3l8 8M11 3l-8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="drawer-body">
+          <div class="detail-titlerow">
+            <h2 class="detail-title" id="detail-title">Seventh chords</h2>
+            <span class="status-pill" id="detail-status">
+              <span class="dot" aria-hidden="true"></span>
+              <span id="detail-status-text">In progress</span>
+            </span>
+          </div>
+          <p class="detail-desc" id="detail-desc">Adding the seventh interval to create richer, more complex harmony. Builds on root-position triads and inversions.</p>
+
+          <div class="meta-list">
+            <div class="meta-row">
+              <span class="k">Practice tool</span>
+              <span class="v" id="detail-tool">Chord Practice</span>
+            </div>
+            <div class="meta-row">
+              <span class="k">Mastery threshold</span>
+              <span class="v" id="detail-mastery">80% accuracy across 3 sessions</span>
+            </div>
+            <div class="meta-row">
+              <span class="k">Prerequisites</span>
+              <span class="v" id="detail-prereqs">Root position triads · First inversion</span>
+            </div>
+            <div class="meta-row">
+              <span class="k">Unlocks</span>
+              <span class="v" id="detail-unlocks">Extended voicings · Jazz voicings</span>
+            </div>
+          </div>
+
+          <div class="progress-block" aria-label="Mastery progress">
+            <div class="row">
+              <span class="lbl">Current session accuracy</span>
+              <span class="val" id="detail-acc-val">74%</span>
+            </div>
+            <div class="bar"><div id="detail-acc-bar" style="width:74%"></div></div>
+            <div class="ticks" id="detail-ticks" aria-label="Sessions completed">
+              <div class="tick done" title="Session 1"></div>
+              <div class="tick curr" title="Session 2"></div>
+              <div class="tick" title="Session 3"></div>
+            </div>
+          </div>
+
+          <div class="cta-stack">
+            <button class="btn-primary" type="button">
+              <span>Expand branch</span>
+              <span class="cost"><span class="bolt" aria-hidden="true"></span>200 XP</span>
+            </button>
+            <button class="btn-secondary" type="button">Open Chord Practice</button>
+          </div>
+        </div>
+      </aside>
+
+    </section>
+  </main>
+
+  <!-- ── BOTTOM NAV (unified tabbar) ────────────────────────── -->
+  <nav class="tabbar" aria-label="Primary">
+    <button type="button" class="tab" onclick="location.href='landing.html'">Home</button>
+    <button type="button" class="tab" onclick="location.href='theory.html'">Theory</button>
+    <button type="button" class="tab" onclick="location.href='tom-hears.html'">Tom Hears</button>
+    <button type="button" class="tab" aria-current="page">Skills</button>
+  </nav>
+
+  <!-- ── Chat trigger (right-edge floating disc) ──────────────── -->
+  <button type="button" class="chat-trigger" id="chat-trigger" aria-label="Ask Tom" aria-expanded="false" aria-controls="chat-panel">T</button>
+
+  <!-- ── Chat panel ────────────────────────────────────────────── -->
+  <div class="chat-scrim" id="chat-scrim" aria-hidden="true"></div>
+  <aside class="chat-panel" id="chat-panel" aria-hidden="true" aria-labelledby="chat-panel-title">
+    <header class="chat-panel__head">
+      <h2 class="chat-panel__title" id="chat-panel-title">Ask Tom</h2>
+      <button type="button" class="chat-panel__close" id="chat-close" aria-label="Close">
+        <svg viewBox="0 0 14 14" aria-hidden="true"><path d="M3 3l8 8M11 3l-8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </header>
+    <div class="chat-panel__body">
+      <div class="chat-panel__placeholder-mark" aria-hidden="true">T</div>
+      <div class="chat-panel__placeholder-title">Tom is listening</div>
+      <p class="chat-panel__placeholder-body">Ask about anything you're working on. Chat is part of the Stage 3 build — for now this is the trigger and the surface only.</p>
+    </div>
+    <form class="chat-panel__compose" onsubmit="event.preventDefault();">
+      <input type="text" placeholder="Ask Tom anything…" aria-label="Message" disabled>
+    </form>
+  </aside>
+</div>
+
+<script>
+
+/* ──────────────────────────────────────────────────────────
+   GALAXIES (overview-level data — same as v2)
+   ────────────────────────────────────────────────────────── */
+const trees = [
+  { id: "guitar",  label: "Guitar",  colour: "#72C830", x: 290, y: 250, size: "large",  diam: 230, sub: 18, mastered: 5 },
+  { id: "piano",   label: "Piano",   colour: "#E85C2A", x: 700, y: 220, size: "large",  diam: 220, sub: 14, mastered: 4 },
+  { id: "bass",    label: "Bass",    colour: "#2AB862", x: 250, y: 510, size: "medium", diam: 170, sub: 8,  mastered: 2 },
+  { id: "ableton", label: "Ableton", colour: "#2AB8A8", x: 720, y: 520, size: "medium", diam: 175, sub: 9,  mastered: 0 }
+];
+const treeEdges = [["guitar","bass"], ["piano","ableton"]];
+
+/* ──────────────────────────────────────────────────────────
+   PER-GALAXY TREE DATA
+   Coordinates are normalised 0–1 (x: left→right, y: top→bottom)
+   so the same data renders into both the small inset (320×200)
+   and the full plate tree-layer (1000×700).
+   ────────────────────────────────────────────────────────── */
+const galaxyData = {
+  /* Piano is "categorised" — it has the extra mini-galaxy layer.
+     Each category is its own constellation. The flat .nodes shape
+     used by Guitar/Bass/Ableton is not present here. */
+  piano: {
+    colour: "#E85C2A",
+    type: "categorised",
+    nebulaRotate: -12,
+    categories: {
+      scales: {
+        name: "Scales",
+        x: 0.25, y: 0.30,
+        status: "in_progress",
+        mastered: 1, total: 5,
+        nebulaRotate: -8,
+        nodes: [
+          { id: "major",     short: "Major scale",      status: "completed",   x: 0.50, y: 0.18, lbl: { dx:  0, dy: 22, anchor:"middle"} },
+          { id: "nat_minor", short: "Natural minor",    status: "in_progress", x: 0.25, y: 0.42, lbl: { dx:-14, dy: 4,  anchor:"end"   } },
+          { id: "pentatonic",short: "Pentatonic",       status: "available",   x: 0.75, y: 0.42, lbl: { dx: 14, dy: 4,  anchor:"start" } },
+          { id: "modes",     short: "Modes intro",      status: "previewed",   x: 0.50, y: 0.65, lbl: { dx:  0, dy: 22, anchor:"middle"} },
+          { id: "blues",     short: "Blues scale",      status: "hidden",      x: 0.50, y: 0.88, lbl: { dx:  0, dy: 22, anchor:"middle"} }
+        ],
+        edges: [
+          ["major","nat_minor"], ["major","pentatonic"],
+          ["nat_minor","modes"], ["pentatonic","modes"],
+          ["modes","blues"]
+        ],
+        sub: []
+      },
+      arpeggios: {
+        name: "Arpeggios",
+        x: 0.50, y: 0.20,
+        status: "in_progress",
+        mastered: 1, total: 4,
+        nebulaRotate: 18,
+        nodes: [
+          { id: "maj_arp",   short: "Major arps",       status: "completed",   x: 0.50, y: 0.20, lbl: { dx:  0, dy: 22, anchor:"middle"} },
+          { id: "min_arp",   short: "Minor arps",       status: "in_progress", x: 0.25, y: 0.50, lbl: { dx:-14, dy: 4,  anchor:"end"   } },
+          { id: "dim_arp",   short: "Diminished",       status: "available",   x: 0.75, y: 0.50, lbl: { dx: 14, dy: 4,  anchor:"start" } },
+          { id: "ext_arp",   short: "7th arpeggios",    status: "hidden",      x: 0.50, y: 0.80, lbl: { dx:  0, dy: 22, anchor:"middle"} }
+        ],
+        edges: [
+          ["maj_arp","min_arp"], ["maj_arp","dim_arp"],
+          ["min_arp","ext_arp"], ["dim_arp","ext_arp"]
+        ],
+        sub: []
+      },
+      chords: {
+        name: "Chords & Voicings",
+        x: 0.75, y: 0.30,
+        status: "in_progress",
+        mastered: 1, total: 6,
+        nebulaRotate: -4,
+        nodes: [
+          { id: "root",     short: "Root pos. triads",  status: "completed",   x: 0.50, y: 0.20, lbl: { dx: 20, dy: 4,  anchor:"start" } },
+          { id: "first",    short: "1st inversion",     status: "available",   x: 0.75, y: 0.40, lbl: { dx: 14, dy: 4,  anchor:"start" } },
+          { id: "second",   short: "2nd inversion",     status: "available",   x: 0.25, y: 0.42, lbl: { dx:-14, dy: 4,  anchor:"end"   } },
+          { id: "seventh",  short: "Seventh chords",    status: "in_progress", x: 0.50, y: 0.58, lbl: { dx:  0, dy: 22, anchor:"middle"} },
+          { id: "extended", short: "Extended voicings", status: "previewed",   x: 0.79, y: 0.74, lbl: { dx: 14, dy: 4,  anchor:"start" } },
+          { id: "jazz",     short: "Jazz voicings",     status: "hidden",      x: 0.50, y: 0.90, lbl: { dx:  0, dy: 22, anchor:"middle"} }
+        ],
+        edges: [
+          ["root","first"], ["root","second"],
+          ["first","seventh"], ["second","seventh"],
+          ["seventh","extended"], ["extended","jazz"]
+        ],
+        sub: [
+          { id: "c_root", label: "C", parent: "root", status: "completed", x: 0.41, y: 0.10 },
+          { id: "g_root", label: "G", parent: "root", status: "completed", x: 0.50, y: 0.04 },
+          { id: "d_root", label: "D", parent: "root", status: "available", x: 0.60, y: 0.10 }
+        ]
+      },
+      pieces: {
+        name: "Pieces",
+        x: 0.30, y: 0.72,
+        status: "in_progress",
+        mastered: 1, total: 4,
+        nebulaRotate: 12,
+        nodes: [
+          { id: "beg_classical",  short: "Beginner classical",  status: "completed",   x: 0.50, y: 0.20, lbl: { dx:  0, dy: 22, anchor:"middle"} },
+          { id: "easy_pop",       short: "Easy pop",            status: "in_progress", x: 0.25, y: 0.48, lbl: { dx:-14, dy: 4,  anchor:"end"   } },
+          { id: "intermediate",   short: "Intermediate",        status: "available",   x: 0.75, y: 0.48, lbl: { dx: 14, dy: 4,  anchor:"start" } },
+          { id: "standards",      short: "Jazz standards",      status: "previewed",   x: 0.50, y: 0.78, lbl: { dx:  0, dy: 22, anchor:"middle"} }
+        ],
+        edges: [
+          ["beg_classical","easy_pop"], ["beg_classical","intermediate"],
+          ["easy_pop","standards"], ["intermediate","standards"]
+        ],
+        sub: []
+      },
+      accomp: {
+        name: "Accompaniment",
+        x: 0.70, y: 0.72,
+        status: "in_progress",
+        mastered: 1, total: 5,
+        nebulaRotate: -16,
+        nodes: [
+          { id: "block",    short: "Block chords",     status: "completed",   x: 0.50, y: 0.18, lbl: { dx:  0, dy: 22, anchor:"middle"} },
+          { id: "broken",   short: "Broken chords",    status: "available",   x: 0.25, y: 0.42, lbl: { dx:-14, dy: 4,  anchor:"end"   } },
+          { id: "alberti",  short: "Alberti bass",     status: "in_progress", x: 0.75, y: 0.42, lbl: { dx: 14, dy: 4,  anchor:"start" } },
+          { id: "stride",   short: "Stride pattern",   status: "previewed",   x: 0.50, y: 0.66, lbl: { dx:  0, dy: 22, anchor:"middle"} },
+          { id: "comping",  short: "Comping patterns", status: "hidden",      x: 0.50, y: 0.88, lbl: { dx:  0, dy: 22, anchor:"middle"} }
+        ],
+        edges: [
+          ["block","broken"], ["block","alberti"],
+          ["broken","stride"], ["alberti","stride"],
+          ["stride","comping"]
+        ],
+        sub: []
+      }
+    }
+  },
+
+  guitar: {
+    colour: "#72C830",
+    nodes: [
+      { id: "open",    short: "Open chords",        status: "completed",   x: 0.50, y: 0.18, lbl: { dx: 20, dy: 4,  anchor:"start" } },
+      { id: "power",   short: "Power chords",       status: "completed",   x: 0.22, y: 0.36, lbl: { dx:-14, dy: 4,  anchor:"end"   } },
+      { id: "barre_e", short: "Barre — E shape",    status: "available",   x: 0.78, y: 0.36, lbl: { dx: 14, dy: 4,  anchor:"start" } },
+      { id: "barre_a", short: "Barre — A shape",    status: "in_progress", x: 0.50, y: 0.55, lbl: { dx:  0, dy: 22, anchor:"middle"} },
+      { id: "pent",    short: "Pentatonic shapes",  status: "previewed",   x: 0.78, y: 0.74, lbl: { dx: 14, dy: 4,  anchor:"start" } },
+      { id: "caged",   short: "CAGED system",       status: "hidden",      x: 0.50, y: 0.88, lbl: { dx:  0, dy: 22, anchor:"middle"} }
+    ],
+    edges: [
+      ["open","power"], ["open","barre_e"],
+      ["power","barre_a"], ["barre_e","barre_a"],
+      ["barre_a","pent"], ["pent","caged"]
+    ],
+    sub: [
+      { id: "e_open", label: "E", parent: "open",  status: "completed", x: 0.40, y: 0.07 },
+      { id: "a_open", label: "A", parent: "open",  status: "completed", x: 0.50, y: 0.03 },
+      { id: "d_open", label: "D", parent: "open",  status: "available", x: 0.60, y: 0.07 },
+      { id: "f5_pwr", label: "F5", parent: "power", status: "completed", x: 0.10, y: 0.27 },
+      { id: "g5_pwr", label: "G5", parent: "power", status: "completed", x: 0.10, y: 0.45 }
+    ],
+    nebulaRotate: 8
+  },
+
+  bass: {
+    colour: "#2AB862",
+    nodes: [
+      { id: "roots",   short: "Root notes",       status: "completed",   x: 0.50, y: 0.18, lbl: { dx: 20, dy: 4,  anchor:"start" } },
+      { id: "octaves", short: "Octaves",          status: "completed",   x: 0.50, y: 0.40, lbl: { dx: 20, dy: 4,  anchor:"start" } },
+      { id: "fingers", short: "Finger style",     status: "in_progress", x: 0.22, y: 0.58, lbl: { dx:-14, dy: 4,  anchor:"end"   } },
+      { id: "slap",    short: "Slap basics",      status: "available",   x: 0.78, y: 0.58, lbl: { dx: 14, dy: 4,  anchor:"start" } },
+      { id: "walking", short: "Walking lines",    status: "previewed",   x: 0.50, y: 0.78, lbl: { dx:  0, dy: 22, anchor:"middle"} },
+      { id: "modes",   short: "Modal lines",      status: "hidden",      x: 0.50, y: 0.92, lbl: { dx:  0, dy: 22, anchor:"middle"} }
+    ],
+    edges: [
+      ["roots","octaves"],
+      ["octaves","fingers"], ["octaves","slap"],
+      ["fingers","walking"], ["slap","walking"],
+      ["walking","modes"]
+    ],
+    sub: [
+      { id: "e_roots", label: "E", parent: "roots", status: "completed", x: 0.40, y: 0.07 },
+      { id: "a_roots", label: "A", parent: "roots", status: "completed", x: 0.50, y: 0.03 },
+      { id: "d_roots", label: "D", parent: "roots", status: "available", x: 0.60, y: 0.07 }
+    ],
+    nebulaRotate: 4
+  },
+
+  ableton: {
+    colour: "#2AB8A8",
+    nodes: [
+      { id: "session",    short: "Session view",       status: "available",   x: 0.28, y: 0.20, lbl: { dx:-14, dy: 4,  anchor:"end"   } },
+      { id: "arrangement",short: "Arrangement view",   status: "available",   x: 0.72, y: 0.20, lbl: { dx: 14, dy: 4,  anchor:"start" } },
+      { id: "midi",       short: "MIDI clips",         status: "in_progress", x: 0.50, y: 0.42, lbl: { dx:  0, dy: 22, anchor:"middle"} },
+      { id: "audio",      short: "Audio clips",        status: "previewed",   x: 0.25, y: 0.65, lbl: { dx:-14, dy: 4,  anchor:"end"   } },
+      { id: "effects",    short: "Effects rack",       status: "hidden",      x: 0.75, y: 0.65, lbl: { dx: 14, dy: 4,  anchor:"start" } },
+      { id: "automation", short: "Automation",         status: "hidden",      x: 0.50, y: 0.88, lbl: { dx:  0, dy: 22, anchor:"middle"} }
+    ],
+    edges: [
+      ["session","midi"], ["arrangement","midi"],
+      ["midi","audio"], ["midi","effects"],
+      ["audio","automation"], ["effects","automation"]
+    ],
+    sub: [],
+    nebulaRotate: -6
+  }
+};
+
+const GOLD_FILL = "#C9A227";
+
+/* ──────────────────────────────────────────────────────────
+   GALAXY drawing (Overview layer)
+   ────────────────────────────────────────────────────────── */
+function drawGalaxy(g, t) {
+  const grp = g.append("g")
+    .attr("class","galaxy-group")
+    .attr("data-galaxy", t.id)
+    .attr("transform", `translate(${t.x}, ${t.y})`);
+
+  const r0 = t.diam * 0.5;
+  const r1 = r0 * 0.62;
+  const r2 = r0 * 0.32;
+
+  const filterId = `blur-${t.id}`;
+  grp.append("defs").append("filter").attr("id", filterId)
+    .attr("x","-30%").attr("y","-30%").attr("width","160%").attr("height","160%")
+    .append("feGaussianBlur").attr("stdDeviation","9");
+
+  grp.append("ellipse").attr("rx", r0).attr("ry", r0 * 0.78)
+    .attr("transform","rotate(-22)")
+    .attr("fill", t.colour).attr("fill-opacity", 0.10)
+    .attr("filter", `url(#${filterId})`);
+  grp.append("ellipse").attr("rx", r1).attr("ry", r1 * 0.72)
+    .attr("transform","rotate(18)")
+    .attr("fill", "#1A1A1A").attr("fill-opacity", 0.08)
+    .attr("filter", `url(#${filterId})`);
+  grp.append("ellipse").attr("rx", r2).attr("ry", r2 * 0.85)
+    .attr("transform","rotate(-8)")
+    .attr("fill", t.colour).attr("fill-opacity", 0.18)
+    .attr("filter", `url(#${filterId})`);
+
+  grp.append("circle").attr("r", 5).attr("fill", t.colour).attr("opacity", 0.95)
+    .attr("stroke","#fff").attr("stroke-width", 1.5);
+
+  // Sparkle dust
+  const seed = (t.id.charCodeAt(0) * 13) % 1000;
+  function rand(n) { const s = Math.sin(seed + n * 991) * 10000; return s - Math.floor(s); }
+  const N = Math.round(t.sub * 1.6);
+  for (let i = 0; i < N; i++) {
+    const a = rand(i) * Math.PI * 2;
+    const rad = (0.40 + rand(i+50) * 0.55) * r0;
+    const cx = Math.cos(a) * rad;
+    const cy = Math.sin(a) * rad * 0.78;
+    const size = 0.7 + rand(i+100) * 1.6;
+    grp.append("circle").attr("cx", cx).attr("cy", cy).attr("r", size)
+      .attr("fill", "#1A1A1A").attr("opacity", 0.16 + rand(i+200) * 0.22);
+  }
+
+  // Transparent hit area for the whole galaxy click target
+  grp.append("circle").attr("class","galaxy-hit")
+    .attr("r", r0).attr("fill","transparent")
+    .attr("data-galaxy", t.id);
+
+  return grp;
+}
+
+/* ──────────────────────────────────────────────────────────
+   Resolve a galaxy/category pair to renderable tree data.
+   For a flat galaxy:        resolveTree("guitar")
+   For a categorised galaxy: resolveTree("piano", "chords")
+   For categorised galaxy with no category, returns null
+   (caller should render the categories layer instead).
+   ────────────────────────────────────────────────────────── */
+function resolveTree(galaxyId, categoryId) {
+  const g = galaxyData[galaxyId];
+  if (!g) return null;
+  if (g.type === "categorised") {
+    if (!categoryId) return null;
+    const c = g.categories[categoryId];
+    if (!c) return null;
+    return {
+      colour: g.colour,
+      nodes: c.nodes,
+      edges: c.edges,
+      sub: c.sub,
+      nebulaRotate: c.nebulaRotate ?? g.nebulaRotate
+    };
+  }
+  return g;
+}
+
+/* TREE drawing — works for both the inset (small) and the
+   full-plate tree-layer (large). Pass a target SVG selection,
+   a galaxy id (and optional category id for categorised galaxies),
+   and a bounding box in target SVG coords. */
+function drawTree(svgSel, galaxyId, bbox, opts = {}) {
+  const data = resolveTree(galaxyId, opts.categoryId);
+  if (!data) return;
+
+  const W = bbox.x1 - bbox.x0;
+  const H = bbox.y1 - bbox.y0;
+  const sx = (n) => bbox.x0 + n.x * W;
+  const sy = (n) => bbox.y0 + n.y * H;
+
+  const colour = data.colour;
+  const isLarge = !!opts.large;
+  const r       = isLarge ? 14 : 9;
+  const subR    = isLarge ? 7  : 4.5;
+  const labelCls = isLarge ? "tree-star-label" : "star-label";
+  const subLabelCls = isLarge ? "tree-substar-label" : "substar-label";
+
+  // Defs / nebula backdrop (only when large — inset already has its own)
+  if (isLarge) {
+    const defs = svgSel.append("defs");
+    defs.append("filter").attr("id", `treeblur-${galaxyId}`)
+      .attr("x","-30%").attr("y","-30%").attr("width","160%").attr("height","160%")
+      .append("feGaussianBlur").attr("stdDeviation","18");
+
+    const cx = bbox.x0 + W * 0.5;
+    const cy = bbox.y0 + H * 0.5;
+    svgSel.append("ellipse").attr("cx", cx).attr("cy", cy)
+      .attr("rx", W * 0.55).attr("ry", H * 0.45)
+      .attr("transform", `rotate(${data.nebulaRotate} ${cx} ${cy})`)
+      .attr("fill", colour).attr("fill-opacity", 0.10)
+      .attr("filter", `url(#treeblur-${galaxyId})`);
+    svgSel.append("ellipse").attr("cx", cx).attr("cy", cy)
+      .attr("rx", W * 0.32).attr("ry", H * 0.30)
+      .attr("transform", `rotate(${data.nebulaRotate + 30} ${cx} ${cy})`)
+      .attr("fill", "#1A1A1A").attr("fill-opacity", 0.06)
+      .attr("filter", `url(#treeblur-${galaxyId})`);
+
+    // Sparkle dust
+    function rnd(s) { const v = Math.sin(s) * 10000; return v - Math.floor(v); }
+    const dust = svgSel.append("g");
+    for (let i = 0; i < 60; i++) {
+      dust.append("circle")
+        .attr("cx", bbox.x0 + rnd(i*7+1) * W)
+        .attr("cy", bbox.y0 + rnd(i*7+2) * H)
+        .attr("r", 0.6 + rnd(i*7+3) * 1.4)
+        .attr("fill", "#1A1A1A")
+        .attr("opacity", 0.10 + rnd(i*7+4) * 0.18);
+    }
+  }
+
+  // Edges
+  const gE = svgSel.append("g");
+  data.edges.forEach(([a,b]) => {
+    const na = data.nodes.find(n => n.id === a);
+    const nb = data.nodes.find(n => n.id === b);
+    if (!na || !nb) return;
+    const hidden = (na.status === "hidden" || nb.status === "hidden");
+    gE.append("line")
+      .attr("class", hidden ? "edge faint" : "edge constellation")
+      .attr("x1", sx(na)).attr("y1", sy(na))
+      .attr("x2", sx(nb)).attr("y2", sy(nb));
+  });
+
+  // Sub-star edges
+  data.sub.forEach(sn => {
+    const parent = data.nodes.find(n => n.id === sn.parent);
+    if (!parent) return;
+    gE.append("line").attr("class","edge").attr("stroke-opacity", 0.10)
+      .attr("x1", sx(parent)).attr("y1", sy(parent))
+      .attr("x2", sx(sn)).attr("y2", sy(sn));
+  });
+
+  // Nodes
+  const gN = svgSel.append("g");
+  data.nodes.forEach(n => {
+    const cls = isLarge ? "tree-star" : "star";
+    const g = gN.append("g")
+      .attr("class", cls)
+      .attr("data-node", n.id)
+      .attr("data-galaxy", galaxyId)
+      .attr("transform", `translate(${sx(n)}, ${sy(n)})`);
+
+    const fill = n.status === "completed" ? GOLD_FILL : colour;
+    let opacity = 1;
+    if (n.status === "previewed") opacity = 0.40;
+    if (n.status === "hidden")    opacity = 0.10;
+
+    if (n.status === "in_progress") {
+      g.append("circle").attr("class","pulse-ring");
+    }
+    if (n.status === "previewed") {
+      g.append("circle").attr("r", isLarge ? 22 : 14).attr("fill","none")
+        .attr("stroke", colour).attr("stroke-width", 1.1)
+        .attr("stroke-dasharray","3 3").attr("opacity", 0.65);
+    }
+    if (n.status === "completed") {
+      g.append("circle").attr("r", r + 3).attr("fill","none")
+        .attr("stroke", GOLD_FILL).attr("stroke-width", 1).attr("opacity", 0.45);
+    }
+
+    g.append("circle").attr("r", r)
+      .attr("fill", n.status === "hidden" ? "#1A1A1A" : fill)
+      .attr("opacity", opacity)
+      .attr("stroke","#fff").attr("stroke-width", 1.25);
+
+    if (n.status !== "hidden") {
+      let labelClasses = labelCls;
+      if (n.status === "previewed") labelClasses += " previewed";
+      const labelMul = isLarge ? 1.55 : 1.0;
+      g.append("text").attr("class", labelClasses)
+        .attr("x", n.lbl.dx * labelMul).attr("y", n.lbl.dy * labelMul)
+        .attr("text-anchor", n.lbl.anchor).text(n.short);
+    }
+
+    // "+" badge on in-progress nodes (carries the design signal from v2)
+    if (n.status === "in_progress") {
+      g.append("circle").attr("cx", r - 1).attr("cy", -r + 1)
+        .attr("r", isLarge ? 7 : 5).attr("fill","#fff")
+        .attr("stroke", GOLD_FILL).attr("stroke-width", 1.1);
+      g.append("text").attr("x", r - 1).attr("y", isLarge ? -r + 5 : -r + 3.5)
+        .attr("text-anchor","middle").attr("font-family","Nunito")
+        .attr("font-size", isLarge ? 12 : 9).attr("font-weight","800")
+        .attr("fill", "#A88320").text("+");
+    }
+
+    // Click handler (only on the large tree layer)
+    if (isLarge && n.status !== "hidden") {
+      g.on("click", () => onStarClick(galaxyId, opts.categoryId, n.id));
+    }
+  });
+
+  // Sub-stars
+  data.sub.forEach(sn => {
+    const g = gN.append("g")
+      .attr("class","tree-substar")
+      .attr("transform", `translate(${sx(sn)}, ${sy(sn)})`);
+    const fill = sn.status === "completed" ? GOLD_FILL : colour;
+    g.append("circle").attr("r", subR).attr("fill", fill)
+      .attr("opacity", sn.status === "completed" ? 0.95 : 0.85)
+      .attr("stroke","#fff").attr("stroke-width", 1.1);
+    g.append("text").attr("class", subLabelCls)
+      .attr("y", isLarge ? -12 : -8)
+      .attr("text-anchor","middle")
+      .attr("font-size", isLarge ? 12 : 9).text(sn.label);
+  });
+
+  return { sx, sy };
+}
+
+/* ──────────────────────────────────────────────────────────
+   PLATE rendering
+   ────────────────────────────────────────────────────────── */
+const svg = d3.select("#svg-plate");
+
+// Galaxies layer (Overview)
+const galaxiesLayer = svg.append("g").attr("class","layer-galaxies");
+
+// Background dashed edges between galaxies
+const gEdges = galaxiesLayer.append("g");
+treeEdges.forEach(([a,b]) => {
+  const ta = trees.find(t => t.id === a);
+  const tb = trees.find(t => t.id === b);
+  gEdges.append("line").attr("class","edge faint")
+    .attr("x1", ta.x).attr("y1", ta.y)
+    .attr("x2", tb.x).attr("y2", tb.y);
+});
+
+// Galaxies + names + reticle
+const gGalaxies = galaxiesLayer.append("g");
+trees.forEach(t => drawGalaxy(gGalaxies, t));
+
+const gLabels = galaxiesLayer.append("g");
+trees.forEach(t => {
+  const r = t.diam * 0.5;
+  const ly = t.y + r + 22;
+  gLabels.append("text").attr("class","galaxy-name")
+    .attr("x", t.x).attr("y", ly).attr("text-anchor","middle").text(t.label);
+  gLabels.append("text").attr("class","galaxy-meta")
+    .attr("x", t.x).attr("y", ly + 16).attr("text-anchor","middle")
+    .text(`${t.sub} skills · ${t.size}`);
+});
+
+// Inspection reticle — moves to whichever galaxy is currently being
+// previewed (initial: Piano). Replaces the old per-galaxy hover scale.
+const reticleGroup = galaxiesLayer.append("g")
+  .attr("class","reticle")
+  .attr("opacity", 0.6);
+
+function moveReticleTo(galaxyId) {
+  const t = trees.find(x => x.id === galaxyId);
+  if (!t) return;
+  reticleGroup.selectAll("*").remove();
+  reticleGroup.append("circle")
+    .attr("cx", t.x).attr("cy", t.y)
+    .attr("r", t.diam * 0.5 + 12)
+    .attr("fill","none").attr("stroke","#1A1A1A")
+    .attr("stroke-width", 0.9).attr("stroke-dasharray","3 5");
+  [[t.diam*0.5+18, t.diam*0.5+24]].forEach(([a,b]) => {
+    [[1,0],[-1,0],[0,1],[0,-1]].forEach(([dx,dy]) => {
+      reticleGroup.append("line")
+        .attr("x1", t.x + dx*a).attr("y1", t.y + dy*a)
+        .attr("x2", t.x + dx*b).attr("y2", t.y + dy*b)
+        .attr("stroke","#1A1A1A").attr("stroke-width", 1);
+    });
+  });
+}
+moveReticleTo("piano");
+
+// Categories layer — populated when a categorised galaxy is opened
+const categoriesLayer = svg.append("g").attr("class","layer-categories");
+
+// Tree layer — populated when a category (or flat galaxy) is opened
+const treeLayer = svg.append("g").attr("class","layer-tree");
+
+/* ──────────────────────────────────────────────────────────
+   MINI-GALAXY drawing — used for the categories layer.
+   Same nebula+star+dust language as the main galaxies, scaled
+   down. Each is clickable. Status indicators: in_progress
+   pulse-ring, completed gold ring, locked muted appearance.
+   ────────────────────────────────────────────────────────── */
+function drawMiniGalaxy(g, c, parentColour) {
+  const grp = g.append("g")
+    .attr("class","mini-galaxy")
+    .attr("data-category", c.id)
+    .attr("transform", `translate(${c.cx}, ${c.cy})`)
+    .style("cursor", c.status === "locked" ? "not-allowed" : "pointer");
+
+  const r0 = c.diam * 0.5;
+  const r1 = r0 * 0.62;
+  const r2 = r0 * 0.32;
+
+  const filterId = `miniblur-${c.id}`;
+  grp.append("defs").append("filter").attr("id", filterId)
+    .attr("x","-30%").attr("y","-30%").attr("width","160%").attr("height","160%")
+    .append("feGaussianBlur").attr("stdDeviation","8");
+
+  const baseOpacity = c.status === "locked" ? 0.35 : 1;
+
+  grp.append("ellipse").attr("rx", r0).attr("ry", r0 * 0.78)
+    .attr("transform", `rotate(${c.nebulaRotate ?? -10})`)
+    .attr("fill", parentColour).attr("fill-opacity", 0.10 * baseOpacity)
+    .attr("filter", `url(#${filterId})`);
+  grp.append("ellipse").attr("rx", r1).attr("ry", r1 * 0.72)
+    .attr("transform", `rotate(${(c.nebulaRotate ?? -10) + 30})`)
+    .attr("fill", "#1A1A1A").attr("fill-opacity", 0.07 * baseOpacity)
+    .attr("filter", `url(#${filterId})`);
+  grp.append("ellipse").attr("rx", r2).attr("ry", r2 * 0.85)
+    .attr("transform", `rotate(${(c.nebulaRotate ?? -10) - 8})`)
+    .attr("fill", parentColour).attr("fill-opacity", 0.18 * baseOpacity)
+    .attr("filter", `url(#${filterId})`);
+
+  // Sparkle dust
+  const seed = (c.id.charCodeAt(0) * 17) % 1000;
+  function rand(n) { const s = Math.sin(seed + n * 991) * 10000; return s - Math.floor(s); }
+  const N = Math.round(c.total * 1.4);
+  for (let i = 0; i < N; i++) {
+    const a = rand(i) * Math.PI * 2;
+    const rad = (0.40 + rand(i+50) * 0.55) * r0;
+    const cx = Math.cos(a) * rad;
+    const cy = Math.sin(a) * rad * 0.78;
+    const size = 0.6 + rand(i+100) * 1.4;
+    grp.append("circle").attr("cx", cx).attr("cy", cy).attr("r", size)
+      .attr("fill", "#1A1A1A").attr("opacity", (0.16 + rand(i+200) * 0.22) * baseOpacity);
+  }
+
+  // Status rings around the central star
+  if (c.status === "in_progress") {
+    grp.append("circle").attr("class","pulse-ring");
+  }
+  if (c.status === "completed") {
+    grp.append("circle").attr("r", 9).attr("fill","none")
+      .attr("stroke", GOLD_FILL).attr("stroke-width", 1).attr("opacity", 0.55);
+  }
+
+  // Central star
+  grp.append("circle").attr("r", 5)
+    .attr("fill", c.status === "locked" ? "#1A1A1A" : parentColour)
+    .attr("opacity", c.status === "locked" ? 0.30 : 0.95)
+    .attr("stroke","#fff").attr("stroke-width", 1.5);
+
+  // Lock glyph for locked categories
+  if (c.status === "locked") {
+    grp.append("text").attr("y", 3).attr("text-anchor","middle")
+      .attr("font-family","Nunito").attr("font-size", 9).attr("font-weight","800")
+      .attr("fill","#1A1A1A").attr("opacity", 0.55).text("\u{1F512}");
+  }
+
+  // Label + meta below
+  const ly = r0 + 22;
+  grp.append("text").attr("class","mini-galaxy-name")
+    .attr("x", 0).attr("y", ly).attr("text-anchor","middle")
+    .text(c.name);
+  grp.append("text").attr("class","mini-galaxy-meta")
+    .attr("x", 0).attr("y", ly + 16).attr("text-anchor","middle")
+    .text(c.status === "locked"
+      ? `Locked · ${c.total} skills`
+      : `${c.mastered} / ${c.total} mastered`);
+
+  // Hit area
+  grp.append("circle").attr("class","mini-hit")
+    .attr("r", r0).attr("fill","transparent")
+    .attr("data-category", c.id);
+
+  // Click
+  if (c.status !== "locked") {
+    grp.on("click", () => onCategoryClick(c.id));
+  }
+}
+
+function renderCategoriesLayer(galaxyId) {
+  categoriesLayer.selectAll("*").remove();
+  const g = galaxyData[galaxyId];
+  if (!g || g.type !== "categorised") return;
+
+  // Faint connecting threads (purely decorative — show the cluster)
+  const cats = Object.entries(g.categories).map(([id, c]) => ({
+    id, ...c,
+    cx: 220 + c.x * (780 - 220),
+    cy: 90 + c.y * (600 - 90),
+    diam: 110
+  }));
+
+  // Background nebula wash for the parent galaxy
+  const cx = 500, cy = 345;
+  const defs = categoriesLayer.append("defs");
+  defs.append("filter").attr("id", `parentblur-${galaxyId}`)
+    .attr("x","-30%").attr("y","-30%").attr("width","160%").attr("height","160%")
+    .append("feGaussianBlur").attr("stdDeviation","22");
+  categoriesLayer.append("ellipse").attr("cx", cx).attr("cy", cy)
+    .attr("rx", 320).attr("ry", 240)
+    .attr("transform", `rotate(${g.nebulaRotate} ${cx} ${cy})`)
+    .attr("fill", g.colour).attr("fill-opacity", 0.05)
+    .attr("filter", `url(#parentblur-${galaxyId})`);
+
+  // Edges: from each category to its visual neighbours (light, decorative)
+  const edgeG = categoriesLayer.append("g");
+  for (let i = 0; i < cats.length; i++) {
+    for (let j = i + 1; j < cats.length; j++) {
+      const a = cats[i], b = cats[j];
+      const dx = a.cx - b.cx, dy = a.cy - b.cy;
+      const dist = Math.hypot(dx, dy);
+      if (dist < 280) {
+        edgeG.append("line").attr("class","edge faint")
+          .attr("x1", a.cx).attr("y1", a.cy)
+          .attr("x2", b.cx).attr("y2", b.cy);
+      }
+    }
+  }
+
+  // Mini-galaxies
+  cats.forEach(c => drawMiniGalaxy(categoriesLayer, c, g.colour));
+}
+
+/* ──────────────────────────────────────────────────────────
+   FOCUS INSET — tree-constellation visualisation of whichever
+   tree contains Tom's suggested skill (or the user's pinned
+   skill). The suggested node gets a pulsing soft-gold reticle
+   so the eye lands on it. Click → jump to that skill.
+   ────────────────────────────────────────────────────────── */
+/* Per-galaxy focus state. Each galaxy has a Tom-pinned skill
+   (with optional XP boost) AND a user-pinned flag (boolean on the
+   same skill for the prototype). Display-priority hierarchy:
+     1. Tom + boost (boost > 1)   — gold pin + bolts (always wins)
+     2. User pin                   — grey pin (overrides Tom-no-boost)
+     3. Tom default (boost = 1)    — gold pin, no bolts
+   Tom pins independently via MCP — the user can only toggle their
+   own pin. tomBoost = 1 means no boost (UI hides the pill). */
+const galaxyFocus = {
+  guitar:  { category: null,    skill: "barre_a", tomBoost: 1, userPinned: false },
+  piano:   { category: "chords", skill: "seventh", tomBoost: 2, userPinned: false },
+  bass:    { category: null,    skill: "fingers", tomBoost: 1, userPinned: true  },
+  ableton: { category: null,    skill: "midi",    tomBoost: 3, userPinned: false }
+};
+
+/* Display hierarchy resolver — returns what the inset/card should show. */
+function getActivePinDisplay(galaxyId) {
+  const f = galaxyFocus[galaxyId];
+  if (!f) return null;
+  if (f.tomBoost > 1)  return { source: "tom",  boost: f.tomBoost };
+  if (f.userPinned)    return { source: "user", boost: 1 };
+  return                      { source: "tom",  boost: 1 };
+}
+
+/* Per-galaxy skill-detail content for the skill card on the left.
+   Keyed by galaxy id; describes whichever skill is currently the
+   pinned focus for that galaxy. Real implementation will look this
+   up from the skill_nodes table by node id; for the prototype it's
+   inlined per-galaxy for the current pinned skill only. */
+const galaxySkillDetail = {
+  guitar: {
+    desc: "Movable barre chord based on the open A shape. Barre five strings with the index finger; ring or pinky forms the chord shape on top.",
+    statusText: "In progress",
+    practiceTool: "Chord Practice",
+    masteryThreshold: "75% accuracy across 3 sessions",
+    prerequisites: "Open chords · Power chords",
+    unlocks: "CAGED system · Chord melody",
+    sessionAccuracy: 60,
+    sessions: ["done", "curr", ""]
+  },
+  piano: {
+    desc: "Adding the seventh interval to create richer, more complex harmony. Builds on root-position triads and inversions.",
+    statusText: "In progress",
+    practiceTool: "Chord Practice",
+    masteryThreshold: "80% accuracy across 3 sessions",
+    prerequisites: "Root position triads · First inversion",
+    unlocks: "Extended voicings · Jazz voicings",
+    sessionAccuracy: 74,
+    sessions: ["done", "curr", ""]
+  },
+  bass: {
+    desc: "Plucking with index and middle fingers in alternation. The foundation for almost all modern bass technique — feel and consistency before speed.",
+    statusText: "In progress",
+    practiceTool: "Chord Practice",
+    masteryThreshold: "Steady alternation at 100bpm across 3 sessions",
+    prerequisites: "Octaves · Root notes",
+    unlocks: "Walking lines · Slap basics",
+    sessionAccuracy: 55,
+    sessions: ["done", "curr", ""]
+  },
+  ableton: {
+    desc: "Recording, editing, and arranging MIDI clips inside Session view. The atomic unit of a Live set.",
+    statusText: "In progress",
+    practiceTool: "Free practice (DAW)",
+    masteryThreshold: "Build a 4-clip arrangement from scratch",
+    prerequisites: "Session view · Arrangement view",
+    unlocks: "Effects rack · Automation",
+    sessionAccuracy: 30,
+    sessions: ["curr", "", ""]
+  }
+};
+
+let previewGalaxy = "piano";
+
+const svgInset = d3.select("#svg-inset");
+
+function renderFocusInset(galaxyId) {
+  previewGalaxy = galaxyId;
+  const f = galaxyFocus[galaxyId];
+  if (!f) return;
+
+  const display = getActivePinDisplay(galaxyId);
+  const g = galaxyData[galaxyId];
+  const galaxyName = galaxyLabels[galaxyId].name;
+  const catName    = f.category ? categoryLabel(galaxyId, f.category) : null;
+
+  // Header — galaxy dot + breadcrumb on the left
+  document.getElementById('focus-gdot').style.background = g.colour;
+  document.getElementById('focus-galaxy').textContent = galaxyName;
+  const catEl = document.getElementById('focus-category');
+  const sepEl = document.getElementById('focus-crumb-sep');
+  if (catName) {
+    catEl.textContent = catName;
+    catEl.style.display = "";
+    sepEl.style.display = "";
+  } else {
+    catEl.style.display = "none";
+    sepEl.style.display = "none";
+  }
+
+  // Right slot — pin + bolt-stack (display reflects hierarchy:
+  // Tom+boost wins everything, then user pin, then Tom default)
+  const pin = document.getElementById('pin-mark');
+  pin.dataset.source = display.source;
+  pin.setAttribute('aria-label',
+    display.source === "tom" ? "Tom-pinned" : "Pinned by you");
+
+  const stack = document.getElementById('boost-stack');
+  const boost = Math.max(1, Math.min(4, display.boost || 1));
+  // Bolt count = (multiplier - 1). 2× shows 1 bolt, 3× shows 2, etc.
+  // 1× hides the pill via the [data-boost="1"] CSS rule.
+  const boltCount = boost - 1;
+  stack.dataset.boost = String(boost);
+  stack.innerHTML = "";
+  for (let i = 0; i < boltCount; i++) {
+    const b = document.createElement('span');
+    b.className = 'bolt';
+    b.setAttribute('aria-hidden','true');
+    stack.appendChild(b);
+  }
+  stack.setAttribute('aria-label',
+    boost === 1 ? "Standard reward" : `${boost}x reward boost`);
+
+  // Tree constellation
+  svgInset.selectAll("*").remove();
+
+  // Subtle nebula backdrop tinted to galaxy colour
+  const defs = svgInset.append("defs");
+  defs.append("filter").attr("id","inset-blur")
+    .attr("x","-30%").attr("y","-30%").attr("width","160%").attr("height","160%")
+    .append("feGaussianBlur").attr("stdDeviation","12");
+  svgInset.append("ellipse").attr("cx", 160).attr("cy", 110)
+    .attr("rx", 130).attr("ry", 90)
+    .attr("transform","rotate(-12 160 110)")
+    .attr("fill", g.colour).attr("fill-opacity", 0.10)
+    .attr("filter","url(#inset-blur)");
+  svgInset.append("ellipse").attr("cx", 160).attr("cy", 110)
+    .attr("rx", 80).attr("ry", 60)
+    .attr("transform","rotate(20 160 110)")
+    .attr("fill", "#1A1A1A").attr("fill-opacity", 0.06)
+    .attr("filter","url(#inset-blur)");
+
+  // Draw the relevant tree (a category's tree for categorised galaxies,
+  // otherwise the galaxy's flat tree)
+  drawTree(svgInset, galaxyId, { x0: 18, y0: 14, x1: 302, y1: 192 },
+           { large: false, categoryId: f.category });
+
+  // Overlay a soft-gold reticle on the pinned node
+  const data = resolveTree(galaxyId, f.category);
+  if (data) {
+    const n = data.nodes.find(x => x.id === f.skill);
+    if (n) {
+      const W = 302 - 18;
+      const H = 192 - 14;
+      const cx = 18 + n.x * W;
+      const cy = 14 + n.y * H;
+      svgInset.append("circle").attr("class","inset-suggest-reticle")
+        .attr("cx", cx).attr("cy", cy).attr("r", 16);
+    }
+  }
+}
+
+/* ──────────────────────────────────────────────────────────
+   SKILL CARD renderer — keeps the left-side detail drawer
+   in sync with whichever galaxy is currently previewed.
+   Driven by the same galaxyFocus + galaxySkillDetail data
+   the inset uses. Pin button toggles user-pin state.
+   ────────────────────────────────────────────────────────── */
+function renderSkillCard(galaxyId) {
+  const f = galaxyFocus[galaxyId];
+  const d = galaxySkillDetail[galaxyId];
+  if (!f || !d) return;
+
+  const galaxyName = galaxyLabels[galaxyId].name;
+  const catName    = f.category ? categoryLabel(galaxyId, f.category) : null;
+  const skillName  = skillLabel(galaxyId, f.category, f.skill);
+
+  // Eyebrow breadcrumb
+  const crumbBits = [galaxyName];
+  if (catName) crumbBits.push(catName);
+  document.getElementById('drawer-eyebrow').innerHTML =
+    crumbBits.map((c, i) => i === 0 ? c : `<span class="arrow">›</span> ${c}`).join(' ');
+
+  // Title + status + description
+  document.getElementById('detail-title').textContent       = skillName;
+  document.getElementById('detail-status-text').textContent = d.statusText;
+  document.getElementById('detail-desc').textContent        = d.desc;
+
+  // Meta rows
+  document.getElementById('detail-tool').textContent     = d.practiceTool;
+  document.getElementById('detail-mastery').textContent  = d.masteryThreshold;
+  document.getElementById('detail-prereqs').textContent  = d.prerequisites;
+  document.getElementById('detail-unlocks').textContent  = d.unlocks;
+
+  // Progress
+  document.getElementById('detail-acc-val').textContent  = `${d.sessionAccuracy}%`;
+  document.getElementById('detail-acc-bar').style.width  = `${d.sessionAccuracy}%`;
+  const ticksEl = document.getElementById('detail-ticks');
+  ticksEl.innerHTML = "";
+  d.sessions.forEach((cls, i) => {
+    const t = document.createElement('div');
+    t.className = `tick${cls ? ' ' + cls : ''}`;
+    t.title = `Session ${i + 1}`;
+    ticksEl.appendChild(t);
+  });
+
+  // Pin icon button — small, top of the skill card. Reflects ONLY
+  // user state: filled grey when user has pinned, outline otherwise.
+  // Tom's pin/boost is shown by the inset, not here — Tom pins
+  // independently via MCP, the user just toggles their own pin.
+  const pinBtn = document.getElementById('btn-pin');
+  if (f.userPinned) {
+    pinBtn.dataset.state = "user";
+    pinBtn.setAttribute('aria-label', 'Unpin this skill');
+    pinBtn.title = 'Pinned by you — click to unpin';
+  } else {
+    pinBtn.dataset.state = "none";
+    pinBtn.setAttribute('aria-label', 'Pin this skill to highlight');
+    pinBtn.title = 'Pin this skill to highlight';
+  }
+}
+
+// Click → jump to the previewed galaxy's pinned skill
+document.getElementById('focus-inset').addEventListener('click', () => {
+  const f = galaxyFocus[previewGalaxy];
+  if (!f) return;
+  setZoom('skill', { galaxy: previewGalaxy, categoryId: f.category, nodeId: f.skill });
+});
+
+// Hover handlers on the galaxy hit areas — move the reticle AND
+// re-render the focus inset AND the skill card to that galaxy's pinned focus
+document.querySelectorAll('.galaxy-hit').forEach(el => {
+  el.addEventListener('mouseenter', () => {
+    const id = el.dataset.galaxy;
+    if (id === previewGalaxy) return;
+    moveReticleTo(id);
+    renderFocusInset(id);
+    renderSkillCard(id);
+  });
+});
+
+// Pin icon — toggles userPinned on the currently-previewed galaxy.
+// User pin sits in the middle of the display hierarchy (Tom-with-boost
+// always wins; user pin overrides Tom-no-boost). Tom's tomBoost is
+// untouched by this — Tom owns his own pin via MCP.
+document.getElementById('btn-pin').addEventListener('click', () => {
+  const f = galaxyFocus[previewGalaxy];
+  if (!f) return;
+  f.userPinned = !f.userPinned;
+  renderFocusInset(previewGalaxy);
+  renderSkillCard(previewGalaxy);
+});
+
+/* ──────────────────────────────────────────────────────────
+   ZOOM STATE MACHINE
+   ────────────────────────────────────────────────────────── */
+const stage = document.getElementById('plate-stage');
+const drawerEyebrow = document.getElementById('drawer-eyebrow');
+const dRight = document.getElementById('drawer-right');
+
+// Galaxy header (bottom-left in tree/skill mode)
+const ghDot  = document.getElementById('gh-dot');
+const ghName = document.getElementById('gh-name');
+const ghMeta = document.getElementById('gh-meta');
+
+// Active galaxy label lookup
+const galaxyLabels = {
+  guitar:  { name: "Guitar",  colour: "#72C830", index: { mast: 5, total: 18 } },
+  piano:   { name: "Piano",   colour: "#E85C2A", index: { mast: 5, total: 24 } },
+  bass:    { name: "Bass",    colour: "#2AB862", index: { mast: 2, total: 8  } },
+  ableton: { name: "Ableton", colour: "#2AB8A8", index: { mast: 0, total: 9  } }
+};
+
+// Skill display name lookup (for eyebrow context). Works for both
+// flat galaxies and categorised galaxies — pass categoryId if known.
+function skillLabel(galaxyId, categoryId, nodeId) {
+  const data = resolveTree(galaxyId, categoryId);
+  if (!data) return "";
+  const n = data.nodes.find(x => x.id === nodeId);
+  return n ? n.short : "";
+}
+
+function categoryLabel(galaxyId, categoryId) {
+  const g = galaxyData[galaxyId];
+  if (!g || g.type !== "categorised" || !categoryId) return "";
+  return g.categories[categoryId]?.name || "";
+}
+
+// Re-render the tree layer for the chosen galaxy + (optional) category
+function renderTreeLayer(galaxyId, categoryId) {
+  treeLayer.selectAll("*").remove();
+  const bbox = { x0: 220, y0: 90, x1: 780, y1: 600 };
+  drawTree(treeLayer, galaxyId, bbox, { large: true, categoryId });
+}
+
+// Highlight a single node on the tree-layer with a focus reticle
+function focusNode(galaxyId, categoryId, nodeId) {
+  treeLayer.selectAll(".focus-reticle").remove();
+  const data = resolveTree(galaxyId, categoryId);
+  if (!data) return;
+  const n = data.nodes.find(x => x.id === nodeId);
+  if (!n) return;
+  const bbox = { x0: 220, y0: 90, x1: 780, y1: 600 };
+  const W = bbox.x1 - bbox.x0;
+  const H = bbox.y1 - bbox.y0;
+  const cx = bbox.x0 + n.x * W;
+  const cy = bbox.y0 + n.y * H;
+  treeLayer.append("circle").attr("class","focus-reticle")
+    .attr("cx", cx).attr("cy", cy).attr("r", 30);
+}
+
+// Update nebula active state — chosen galaxy stays bright in tree mode
+function setActiveNebula(galaxyId) {
+  document.querySelectorAll('.nebula').forEach(el => {
+    el.classList.toggle('active', el.dataset.galaxy === galaxyId);
+  });
+}
+
+// Update bottom-left galaxy header
+function setGalaxyHeader(galaxyId) {
+  const g = galaxyLabels[galaxyId];
+  if (!g) return;
+  ghDot.style.background = g.colour;
+  ghName.textContent = g.name;
+  ghMeta.textContent = `${g.index.mast} / ${g.index.total} mastered`;
+}
+
+// Update the index drawer's active galaxy highlight
+function setIndexActive(galaxyId) {
+  document.querySelectorAll('#index-galaxy-list .galaxy-card').forEach(el => {
+    el.classList.toggle('active', el.dataset.galaxy === galaxyId);
+  });
+}
+
+/* ──────────────────────────────────────────────────────────
+   BREADCRUMB renderer — replaces the old 3-button zoom control.
+   Each segment is a button; clicking it zooms back to that level.
+   The terminal segment is non-clickable.
+   ────────────────────────────────────────────────────────── */
+const breadcrumbEl = document.getElementById('breadcrumb');
+
+function renderBreadcrumb(zoom) {
+  const crumbs = [{ label: "Overview", target: { zoom: "overview" } }];
+
+  if (zoom !== "overview") {
+    crumbs.push({
+      label: galaxyLabels[activeGalaxy].name,
+      target: galaxyData[activeGalaxy].type === "categorised"
+        ? { zoom: "categories", galaxy: activeGalaxy }
+        : { zoom: "tree", galaxy: activeGalaxy }
+    });
+  }
+  if ((zoom === "tree" || zoom === "skill") && activeCategory) {
+    crumbs.push({
+      label: categoryLabel(activeGalaxy, activeCategory),
+      target: { zoom: "tree", galaxy: activeGalaxy, categoryId: activeCategory }
+    });
+  }
+  if (zoom === "skill" && activeSkill) {
+    crumbs.push({
+      label: skillLabel(activeGalaxy, activeCategory, activeSkill),
+      target: null  // terminal
+    });
+  }
+
+  breadcrumbEl.innerHTML = "";
+  crumbs.forEach((c, i) => {
+    if (i > 0) {
+      const sep = document.createElement('span');
+      sep.className = 'crumb-arrow';
+      sep.setAttribute('aria-hidden','true');
+      sep.textContent = '›';
+      breadcrumbEl.appendChild(sep);
+    }
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = c.label;
+    if (i === crumbs.length - 1) {
+      btn.classList.add('terminal');
+      btn.setAttribute('aria-current','step');
+    } else {
+      btn.addEventListener('click', () => setZoom(c.target.zoom, c.target));
+    }
+    breadcrumbEl.appendChild(btn);
+  });
+}
+
+// Master state
+let activeGalaxy   = "piano";
+let activeCategory = null;
+let activeSkill    = null;
+
+function setZoom(zoom, opts = {}) {
+  if (opts.galaxy)     activeGalaxy   = opts.galaxy;
+  if (opts.categoryId !== undefined) activeCategory = opts.categoryId;
+  if (opts.nodeId !== undefined)     activeSkill    = opts.nodeId;
+
+  // Reset deeper state when zooming out
+  if (zoom === "overview")   { activeCategory = null; activeSkill = null; }
+  if (zoom === "categories") { activeCategory = null; activeSkill = null; }
+  if (zoom === "tree")       { activeSkill = null; }
+
+  stage.dataset.zoom = zoom;
+  stage.dataset.galaxy = activeGalaxy;
+
+  setIndexActive(activeGalaxy);
+  setGalaxyHeader(activeGalaxy);
+
+  // Layer rendering
+  if (zoom === 'overview') {
+    setActiveNebula(null);
+    categoriesLayer.selectAll("*").remove();
+    treeLayer.selectAll("*").remove();
+  } else {
+    setActiveNebula(activeGalaxy);
+    if (zoom === 'categories') {
+      renderCategoriesLayer(activeGalaxy);
+      treeLayer.selectAll("*").remove();
+    } else {
+      // tree or skill
+      categoriesLayer.selectAll("*").remove();
+      renderTreeLayer(activeGalaxy, activeCategory);
+    }
+  }
+
+  if (zoom === 'skill' && activeSkill) {
+    focusNode(activeGalaxy, activeCategory, activeSkill);
+    const galaxyName = galaxyLabels[activeGalaxy].name;
+    const catName    = activeCategory ? `${categoryLabel(activeGalaxy, activeCategory)} <span class="arrow">›</span> ` : "";
+    const lbl        = skillLabel(activeGalaxy, activeCategory, activeSkill);
+    drawerEyebrow.innerHTML = `${galaxyName} <span class="arrow">›</span> ${catName}${lbl}`;
+    openRight();
+  }
+
+  renderBreadcrumb(zoom);
+}
+
+/* ──────────────────────────────────────────────────────────
+   CLICK HANDLERS
+   ────────────────────────────────────────────────────────── */
+
+// Galaxy click: categorised galaxies go to categories layer,
+// flat galaxies skip directly to their tree.
+function onGalaxyClick(galaxyId) {
+  const g = galaxyData[galaxyId];
+  if (!g) return;
+  if (g.type === "categorised") {
+    setZoom('categories', { galaxy: galaxyId });
+  } else {
+    setZoom('tree', { galaxy: galaxyId, categoryId: null });
+  }
+}
+
+// Category click: into that category's tree
+function onCategoryClick(categoryId) {
+  setZoom('tree', { categoryId });
+}
+
+// Star click: into skill view + drawer
+function onStarClick(galaxyId, categoryId, nodeId) {
+  setZoom('skill', { galaxy: galaxyId, categoryId: categoryId ?? null, nodeId });
+}
+
+// Wire SVG galaxy hit areas
+document.querySelectorAll('.galaxy-hit').forEach(el => {
+  el.addEventListener('click', () => onGalaxyClick(el.dataset.galaxy));
+});
+
+// Wire index drawer galaxy items
+document.querySelectorAll('#index-galaxy-list .galaxy-card').forEach(btn => {
+  btn.addEventListener('click', () => {
+    onGalaxyClick(btn.dataset.galaxy);
+    closeLeft();
+  });
+});
+
+/* ──────────────────────────────────────────────────────────
+   DRAWERS — open/close, scrim, focus management (unchanged)
+   ────────────────────────────────────────────────────────── */
+const dLeft  = document.getElementById('drawer-left');
+const scrim  = document.getElementById('scrim');
+const edgeTab = document.getElementById('edge-tab');
+
+function openLeft() {
+  dLeft.classList.add('open');
+  dLeft.setAttribute('aria-hidden','false');
+  edgeTab.setAttribute('aria-expanded','true');
+  scrim.classList.add('open');
+}
+function closeLeft() {
+  dLeft.classList.remove('open');
+  dLeft.setAttribute('aria-hidden','true');
+  edgeTab.setAttribute('aria-expanded','false');
+  // Scrim only ever opens for the index sheet — skill detail drawer
+  // is always-open chrome and doesn't darken the plate. So closing
+  // the index always closes the scrim, no conditional check.
+  scrim.classList.remove('open');
+}
+function openRight() {
+  dRight.classList.add('open');
+  dRight.setAttribute('aria-hidden','false');
+}
+function closeRight() {
+  dRight.classList.remove('open');
+  dRight.setAttribute('aria-hidden','true');
+  if (!dLeft.classList.contains('open')) scrim.classList.remove('open');
+}
+
+edgeTab.addEventListener('click', () => {
+  if (dLeft.classList.contains('open')) closeLeft(); else openLeft();
+});
+document.getElementById('close-left').addEventListener('click', closeLeft);
+document.getElementById('close-right').addEventListener('click', closeRight);
+
+// Scrim only ever opens with the index sheet, so its click closes
+// only the index — never the skill detail. Skill detail is the
+// near-always-on chrome and shouldn't dismiss accidentally.
+scrim.addEventListener('click', closeLeft);
+
+// Escape: close the most-transient open drawer first. Press once to
+// close the index (if open); press again to close the skill detail.
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  if (dLeft.classList.contains('open'))      closeLeft();
+  else if (dRight.classList.contains('open')) closeRight();
+});
+
+/* Bottom tab affordance */
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.removeAttribute('aria-current'));
+    tab.setAttribute('aria-current', 'page');
+  });
+});
+
+/* Init — load the primary galaxy (Piano for the demo). Both the
+   focus inset (mini zoom) and the skill card on the left are
+   driven by the same per-galaxy pinned focus state, so they
+   stay in sync from page load through every hover. */
+setGalaxyHeader('piano');
+renderBreadcrumb('overview');
+renderFocusInset('piano');
+renderSkillCard('piano');
+
+/* ──────────────────────────────────────────────────────────
+   CHAT TRIGGER + PANEL — unified shell behaviour
+   (mirrors the wiring in daily-practice.html / wheel.html / etc)
+   ────────────────────────────────────────────────────────── */
+{
+  const trigger  = document.getElementById('chat-trigger');
+  const panel    = document.getElementById('chat-panel');
+  const chatScrim = document.getElementById('chat-scrim');
+  const closeBtn = document.getElementById('chat-close');
+
+  if (!sessionStorage.getItem('tom-chat-pulsed')) {
+    requestAnimationFrame(() => {
+      trigger.classList.add('is-pulsing');
+      sessionStorage.setItem('tom-chat-pulsed', '1');
+    });
+    trigger.addEventListener('animationend', () => {
+      trigger.classList.remove('is-pulsing');
+    }, { once: true });
+  }
+
+  function openChat() {
+    panel.classList.add('is-open');
+    chatScrim.classList.add('is-open');
+    trigger.setAttribute('aria-expanded', 'true');
+    panel.setAttribute('aria-hidden', 'false');
+    chatScrim.setAttribute('aria-hidden', 'false');
+  }
+  function closeChat() {
+    panel.classList.remove('is-open');
+    chatScrim.classList.remove('is-open');
+    trigger.setAttribute('aria-expanded', 'false');
+    panel.setAttribute('aria-hidden', 'true');
+    chatScrim.setAttribute('aria-hidden', 'true');
+  }
+  trigger.addEventListener('click', () => {
+    panel.classList.contains('is-open') ? closeChat() : openChat();
+  });
+  closeBtn.addEventListener('click', closeChat);
+  chatScrim.addEventListener('click', closeChat);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && panel.classList.contains('is-open')) closeChat();
+  });
+}
+
+/* Notify host of slide index */
+window.parent && window.parent.postMessage({ slideIndexChanged: 0 }, '*');
+</script>
+
+  <!-- tom-shell.js removed for portfolio embed: it injected an XP pop-out that
+       pulled in tom-xp.css (not bundled), leaking unstyled content into the frame. -->
+
+</body>
+</html>
